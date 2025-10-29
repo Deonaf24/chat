@@ -1,0 +1,1 @@
+export type UploadResult = { filename: string };
