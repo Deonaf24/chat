@@ -20,7 +20,7 @@ async function main() {
   const me = await getMe();
   console.log("After login -> data:", me.username);
 
-  const chat_response = await llm.generate(1, "math", "3", "How do I do 2 + 2?");
+  const chat_response = await llm.generate(1, "math", "3", "How do I do 2 + 2?", "U: hello\n A: Hi! How can I help?\n");
   console.log("User: How do I do 2 + 2? \nIcarus: " + chat_response);
 
   // 4) Logout

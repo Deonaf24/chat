@@ -61,12 +61,6 @@ import {
                     className="w-28 rounded-md border px-2 py-1 text-sm"
                     value={subject} onChange={(e) => setSubject(e.target.value)}
                   />
-                  <label className="text-xs text-muted-foreground">Q#</label>
-                  <input
-                    type="number" min={1}
-                    className="w-16 rounded-md border px-2 py-1 text-sm"
-                    value={qNumber} onChange={(e) => setQNumber(e.target.value)}
-                  />
                 </div>
   
                 <PromptInputButton variant="ghost" disabled>{/* slot */}</PromptInputButton>
