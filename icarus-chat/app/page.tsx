@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 type AuthMode = "login" | "signup";
 type AccountType = "student" | "teacher";
@@ -18,41 +18,10 @@ export default function LoginPage() {
   const [accountType, setAccountType] = useState<AccountType>("student");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-
-  const pageCopy = useMemo(() => {
-    if (mode === "login") {
-      return {
-        title: "Welcome back",
-        description: "Log in to pick up where you left off or try the chat as a guest.",
-        cta: "Continue to chat",
-      };
-    }
-
-    return {
-      title: "Create your account",
-      description: "Choose a student or teacher account so we can tailor the experience for you.",
-      cta: "Create account",
-    };
-  }, [mode]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (!email || !password) {
-      setStatusMessage("Please enter both an email and password to continue.");
-      return;
-    }
-
-    if (mode === "signup") {
-      setStatusMessage(
-        `We\'ve saved your ${accountType} account details. You can use these as soon as the backend is ready.`
-      );
-    } else {
-      setStatusMessage("Login successful. Redirecting you to the chat...");
-    }
-
-    setTimeout(() => router.push("/chat"), 500);
+    router.push("/chat");
   };
 
   return (
@@ -64,43 +33,46 @@ export default function LoginPage() {
       </div>
 
       <main className="min-h-0">
-        <div className="max-w-4xl mx-auto flex h-full flex-col justify-center gap-10 px-6 py-10 md:grid md:grid-cols-[1fr,minmax(320px,380px)] md:items-center">
-          <div className="space-y-4">
-            <p className="rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Early access
-            </p>
-            <div className="space-y-3">
-              <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                Start with login before you jump into the chat.
-              </h1>
-              <p className="text-muted-foreground">
-                Use your credentials to log in or spin up a new account. If you are signing up, let us
-                know whether you are a student or teacher so we can tailor upcoming features accordingly.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button
-                variant={mode === "login" ? "default" : "outline"}
-                onClick={() => setMode("login")}
-              >
-                Log in
-              </Button>
-              <Button
-                variant={mode === "signup" ? "default" : "outline"}
-                onClick={() => setMode("signup")}
-              >
-                Create account
-              </Button>
-              <Button variant="ghost" onClick={() => router.push("/chat")}>Skip to chat</Button>
-            </div>
+        <div className="mx-auto flex h-full max-w-5xl flex-col items-center justify-center px-6 py-12">
+          <div className="mb-8 w-full text-center md:mb-12">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Welcome to Icarus Chat</h1>
+            <p className="text-sm text-muted-foreground">Access your workspace or create an account to get started.</p>
           </div>
 
-          <Card className="w-full border-border/80">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-semibold">{pageCopy.title}</CardTitle>
-              <CardDescription>{pageCopy.description}</CardDescription>
+          <Card className="w-full max-w-xl border-border/80 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={mode === "login" ? "default" : "outline"}
+                    onClick={() => setMode("login")}
+                  >
+                    Log in
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={mode === "signup" ? "default" : "outline"}
+                    onClick={() => setMode("signup")}
+                  >
+                    Sign up
+                  </Button>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => router.push("/chat")}>Continue to chat</Button>
+              </div>
+              <div className="pt-2">
+                <CardTitle className="text-2xl font-semibold">
+                  {mode === "login" ? "Sign in" : "Create account"}
+                </CardTitle>
+                <CardDescription>
+                  {mode === "login" ? "Enter your credentials to continue." : "Choose your role and set your credentials."}
+                </CardDescription>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-5">
+
+            <CardContent>
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -144,9 +116,6 @@ export default function LoginPage() {
                         <SelectItem value="teacher">Teacher</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-xs text-muted-foreground">
-                      We will soon personalize lessons and tools based on whether you teach or study.
-                    </p>
                   </div>
                 )}
 
@@ -154,22 +123,11 @@ export default function LoginPage() {
                   <Button type="submit" className="w-full">
                     {mode === "login" ? "Log in" : "Create account"}
                   </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => router.push("/chat")}
-                  >
-                    {pageCopy.cta}
+                  <Button type="button" variant="outline" className="w-full" onClick={() => router.push("/chat")}>
+                    Continue without signing in
                   </Button>
                 </div>
               </form>
-
-              {statusMessage && (
-                <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                  {statusMessage}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
