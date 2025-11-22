@@ -1,3 +1,5 @@
+"use client";
+
 import { Menu } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -10,9 +12,7 @@ import {
   NavbarLeft,
   NavbarRight,
 } from "../../ui/navbar";
-import Navigation from "../../ui/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "../../ui/sheet";
-import { LogInPopUp } from "@/components/ui/custom/login";
 
 interface NavbarLink {
   text: string;
@@ -21,11 +21,12 @@ interface NavbarLink {
 
 interface NavbarActionProps {
   text: string;
-  href: string;
+  href?: string;
   variant?: ButtonProps["variant"];
   icon?: ReactNode;
   iconRight?: ReactNode;
   isButton?: boolean;
+  onClick?: () => void;
 }
 
 interface NavbarProps {
@@ -48,6 +49,7 @@ export default function Navbar({
   ],
   showNavigation = true,
   customNavigation,
+  actions = [],
   className,
 }: NavbarProps) {
   return (
@@ -65,7 +67,6 @@ export default function Navbar({
             </a>
           </NavbarLeft>
           <NavbarRight>
-            <LogInPopUp />
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -94,9 +95,57 @@ export default function Navbar({
                       {link.text}
                     </a>
                   ))}
+                  {actions.map((action, index) => (
+                    <Button
+                      key={`mobile-${index}`}
+                      variant={action.variant ?? "secondary"}
+                      onClick={action.onClick}
+                      asChild={Boolean(action.href)}
+                    >
+                      {action.href ? (
+                        <a href={action.href} className="justify-start">
+                          {action.text}
+                        </a>
+                      ) : (
+                        <span className="justify-start">{action.text}</span>
+                      )}
+                    </Button>
+                  ))}
                 </nav>
               </SheetContent>
             </Sheet>
+
+            {showNavigation ? (
+              customNavigation ?? (
+                <div className="hidden items-center gap-2 md:flex">
+                  {actions.map((action, index) =>
+                    (action.isButton ?? true) ? (
+                      <Button
+                        key={`action-${index}`}
+                        variant={action.variant ?? "outline"}
+                        onClick={action.onClick}
+                        asChild={Boolean(action.href)}
+                        className="gap-2"
+                      >
+                        {action.href ? (
+                          <a href={action.href}>{action.text}</a>
+                        ) : (
+                          <span>{action.text}</span>
+                        )}
+                      </Button>
+                    ) : (
+                      <a
+                        key={`action-${index}`}
+                        href={action.href}
+                        className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {action.text}
+                      </a>
+                    )
+                  )}
+                </div>
+              )
+            ) : null}
           </NavbarRight>
         </NavbarComponent>
       </div>

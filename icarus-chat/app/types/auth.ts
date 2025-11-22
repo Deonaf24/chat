@@ -22,7 +22,6 @@ export interface UserInDB {
 export interface UserCreate {
     username: string,
     email: string,
-    full_name: string,
     password: string,
     password_confirm: string,
     is_teacher: boolean,
