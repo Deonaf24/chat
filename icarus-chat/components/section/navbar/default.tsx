@@ -10,9 +10,7 @@ import {
   NavbarLeft,
   NavbarRight,
 } from "../../ui/navbar";
-import Navigation from "../../ui/navigation";
 import { Sheet, SheetContent, SheetTrigger } from "../../ui/sheet";
-import { LogInPopUp } from "@/components/ui/custom/login";
 
 interface NavbarLink {
   text: string;
@@ -65,7 +63,6 @@ export default function Navbar({
             </a>
           </NavbarLeft>
           <NavbarRight>
-            <LogInPopUp />
             <Sheet>
               <SheetTrigger asChild>
                 <Button
