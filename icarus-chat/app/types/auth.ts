@@ -18,3 +18,12 @@ export interface User {
 export interface UserInDB {
     hashed_password: string,
 }
+
+export interface UserCreate {
+    username: string,
+    email: string,
+    full_name: string,
+    password: string,
+    password_confirm: string,
+    is_teacher: boolean,
+}

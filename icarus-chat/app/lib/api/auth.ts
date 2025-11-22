@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import {Token, User} from "@/app/types/auth";
+import {UserCreate, Token, User} from "@/app/types/auth";
 
 
 export async function postToken(username: string, password: string): Promise<Token> {
@@ -16,5 +16,18 @@ export async function postToken(username: string, password: string): Promise<Tok
 
 export async function getMe(): Promise<User> {
   const response = await apiClient.get<User>('/auth/users/me/');
+  return response.data;
+}
+
+export async function registerUser(data: UserCreate): Promise<User> {
+  const response = await apiClient.post<User>('/auth/register', {
+    username: data.username,
+    email: data.email,
+    full_name: data.full_name,
+    password: data.password,
+    password_confirm: data.password_confirm,
+    is_teacher: data.is_teacher,
+  });
+  
   return response.data;
 }

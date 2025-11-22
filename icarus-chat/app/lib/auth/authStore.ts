@@ -1,10 +1,22 @@
-import { postToken, getMe } from  "@/app/lib/api/auth.ts"
-import { User } from "@/app/types/auth.ts"
+import { postToken, getMe, registerUser } from  "@/app/lib/api/auth"
+import { User, UserCreate } from "@/app/types/auth"
 
 let token: string | null = null;
 let currentUser: User | null = null;
 
 export const authStore = {
+    async register(username: string, email: string, password: string, password_confirm: string, full_name: string, is_teacher: boolean): Promise<User>{
+        const data: UserCreate = {
+            username: username, 
+            email: email, 
+            password: password, 
+            password_confirm: password_confirm, 
+            full_name: full_name, 
+            is_teacher: is_teacher
+        }
+        const responseUser = await registerUser(data);
+        return this.login(username, password)
+    },
     async login(username: string, password: string): Promise<User>{
         const response = await postToken(username, password);
         token = response.access_token;
