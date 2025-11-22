@@ -21,6 +21,10 @@ export default function ChatPage() {
           router.replace("/");
           return;
         }
+        if (user.is_teacher) {
+          router.replace("/dashboard");
+          return;
+        }
         setChecking(false);
       })
       .catch(() => {

@@ -9,10 +9,12 @@ export interface TokenData {
 }
 
 export interface User {
-    username: string,
-    email?: string | null,
-    full_name?: string | null,
-    disabled?: boolean | null,
+    id?: number;
+    username: string;
+    email?: string | null;
+    full_name?: string | null;
+    disabled?: boolean | null;
+    is_teacher?: boolean;
 }
 
 export interface UserInDB {
