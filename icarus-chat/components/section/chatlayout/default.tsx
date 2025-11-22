@@ -1,13 +1,21 @@
+"use client";
+
 import Navbar from "@/components/section/navbar/default";
-import { PropsWithChildren } from "react";
+import { useRouter } from "next/navigation";
 import { ChatInputBar } from "../chatinputbar/default";
 import { ChatMessageList } from "../chatbox/default";
 import { useChatController } from "@/app/hooks/useChatController";
+import { authStore } from "@/app/lib/auth/authStore";
 
-export default function ChatLayout({ children }: PropsWithChildren) {
-
+export default function ChatLayout() {
+    const router = useRouter();
     const { state, set, actions } = useChatController();
-    
+
+    const handleLogout = () => {
+        authStore.logout();
+        router.replace("/");
+    };
+
     return (
     <div
         style={{ ["--chat-h" as any]: "clamp(560px, 70dvh, 720px)" }}
@@ -15,7 +23,9 @@ export default function ChatLayout({ children }: PropsWithChildren) {
     >
         <div className="border-b bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="max-w-4xl mx-auto w-full">
-                <Navbar />
+                <Navbar
+                    actions={[{ text: "Logout", variant: "secondary", onClick: handleLogout }]}
+                />
             </div>
         </div>
 
