@@ -124,7 +124,6 @@ export function LoginDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPro
 export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProps) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"teacher" | "student">("student");
@@ -134,7 +133,6 @@ export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPr
   const reset = () => {
     setUsername("");
     setEmail("");
-    setFullName("");
     setPassword("");
     setConfirmPassword("");
     setRole("student");
@@ -149,11 +147,10 @@ export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPr
     () =>
       !username ||
       !email ||
-      !fullName ||
       !password ||
       !confirmPassword ||
       loading,
-    [confirmPassword, email, fullName, loading, password, username],
+    [confirmPassword, email, loading, password, username],
   );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -172,7 +169,6 @@ export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPr
         email,
         password,
         confirmPassword,
-        fullName,
         role === "teacher",
       );
       onAuthSuccess?.(user);
@@ -190,9 +186,6 @@ export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPr
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create your account</DialogTitle>
-          <DialogDescription>
-            Sign up to start chatting. Choose whether you are a teacher or student.
-          </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -215,16 +208,6 @@ export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPr
                 onChange={(event) => setEmail(event.target.value)}
                 autoComplete="email"
                 placeholder="you@example.com"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="signup-fullname">Full name</Label>
-              <Input
-                id="signup-fullname"
-                value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                autoComplete="name"
-                placeholder="Your full name"
               />
             </div>
             <div className="space-y-2">

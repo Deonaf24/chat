@@ -20,10 +20,10 @@ export async function getMe(): Promise<User> {
 }
 
 export async function registerUser(data: UserCreate): Promise<User> {
+  console.log("Data payload:", data);
   const response = await apiClient.post<User>('/auth/register', {
     username: data.username,
     email: data.email,
-    full_name: data.full_name,
     password: data.password,
     password_confirm: data.password_confirm,
     is_teacher: data.is_teacher,

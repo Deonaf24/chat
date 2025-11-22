@@ -30,13 +30,12 @@ const setUser = (user: User | null) => {
 };
 
 export const authStore = {
-    async register(username: string, email: string, password: string, password_confirm: string, full_name: string, is_teacher: boolean): Promise<User>{
+    async register(username: string, email: string, password: string, password_confirm: string, is_teacher: boolean): Promise<User>{
         const data: UserCreate = {
             username: username,
             email: email,
             password: password,
             password_confirm: password_confirm,
-            full_name: full_name,
             is_teacher: is_teacher
         }
         await registerUser(data);

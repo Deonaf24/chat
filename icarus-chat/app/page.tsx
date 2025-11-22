@@ -39,15 +39,12 @@ export default function LandingPage() {
 
       <div className="mx-auto flex max-w-4xl flex-col items-center gap-10 text-center">
         <div className="space-y-4">
-          <p className="inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-            Guided chat for teachers and students
-          </p>
-          <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Build better conversations with a simple, focused workspace.
+
+          <h1 className="text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-10xl">
+            Socratica
           </h1>
           <p className="text-lg text-muted-foreground">
-            Log in or create an account to jump back into your chat flow. Your role helps us tailor prompts for
-            the best learning experience.
+            Log in or create an account
           </p>
         </div>
 
