@@ -17,9 +17,12 @@ import {
   createAssignment,
   listAssignments,
   listClasses,
+  createFile,
   listStudents,
   listTeachers,
 } from "@/app/lib/api/school";
+import { listUsers } from "@/app/lib/api/auth";
+import { postUpload } from "@/app/lib/api/upload";
 import {
   AssignmentCreate,
   AssignmentRead,
@@ -69,12 +72,14 @@ export default function DashboardPage() {
   const [teacher, setTeacher] = useState<TeacherRead | null>(null);
   const [classes, setClasses] = useState<ClassRead[]>([]);
   const [students, setStudents] = useState<StudentRead[]>([]);
+  const [usersById, setUsersById] = useState<Record<number, User>>({});
   const [assignments, setAssignments] = useState<AssignmentRead[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAssignmentDialog, setShowAssignmentDialog] = useState(false);
   const [creatingAssignment, setCreatingAssignment] = useState(false);
+  const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
   const [assignmentForm, setAssignmentForm] = useState<AssignmentFormState>({
     title: "",
     description: "",
@@ -112,11 +117,12 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const [teacherList, classList, studentList, assignmentList] = await Promise.all([
+      const [teacherList, classList, studentList, assignmentList, userList] = await Promise.all([
         listTeachers(),
         listClasses(),
         listStudents(),
         listAssignments(),
+        listUsers(),
       ]);
 
       const teacherRecord = teacherList.find((entry) => entry.user_id === currentUser.id) ?? null;
@@ -129,6 +135,7 @@ export default function DashboardPage() {
 
       setClasses(teacherClasses);
       setStudents(studentList);
+      setUsersById(userList.reduce((acc, entry) => ({ ...acc, [entry.id]: entry }), {}));
 
       const teacherAssignments = assignmentList.filter((assignment) =>
         teacherClasses.some((classItem) => classItem.id === assignment.class_id),
@@ -183,10 +190,16 @@ export default function DashboardPage() {
 
   const resetAssignmentForm = () => {
     setAssignmentForm({ title: "", description: "", dueDate: "" });
+    setAssignmentFile(null);
   };
 
   const handleCreateAssignment = async () => {
     if (!selectedClassId || !user) return;
+
+    if (assignmentFile && assignmentFile.type !== "application/pdf") {
+      setError("Only PDF files are supported for assignments right now.");
+      return;
+    }
 
     setCreatingAssignment(true);
     setError(null);
@@ -201,6 +214,16 @@ export default function DashboardPage() {
       };
 
       const newAssignment = await createAssignment(payload);
+
+      if (assignmentFile) {
+        const uploadResult = await postUpload(assignmentFile);
+        await createFile({
+          filename: uploadResult.filename,
+          path: uploadResult.filename,
+          assignment_id: newAssignment.id,
+        });
+      }
+
       setAssignments((prev) => [newAssignment, ...prev]);
       setShowAssignmentDialog(false);
       resetAssignmentForm();
@@ -398,10 +421,12 @@ export default function DashboardPage() {
                         className="rounded-lg border bg-background px-4 py-3 text-sm shadow-sm"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">Student #{student.id}</span>
+                          <span className="font-medium">
+                            {usersById[student.user_id]?.username ?? `Student #${student.id}`}
+                          </span>
                           <Badge variant="secondary">Enrolled</Badge>
                         </div>
-                        <p className="text-muted-foreground">User #{student.user_id}</p>
+                        <p className="text-muted-foreground">User ID: {student.user_id}</p>
                       </div>
                     ))}
                   </div>
@@ -539,6 +564,23 @@ export default function DashboardPage() {
                   setAssignmentForm((prev) => ({ ...prev, dueDate: event.target.value }))
                 }
               />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="assignment-file">
+                Attachment (PDF only)
+              </label>
+              <Input
+                id="assignment-file"
+                type="file"
+                accept="application/pdf"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  setAssignmentFile(file ?? null);
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Optional: attach a PDF for students to reference. Uploads will be linked to the assignment.
+              </p>
             </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
