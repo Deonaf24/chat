@@ -31,3 +31,18 @@ export async function registerUser(data: UserCreate): Promise<User> {
   
   return response.data;
 }
+
+export async function listUsers(): Promise<User[]> {
+  const response = await apiClient.get<User[]>("/auth/users");
+  return response.data;
+}
+
+export async function getUser(userId: number): Promise<User> {
+  const response = await apiClient.get<User>(`/auth/users/${userId}`);
+  return response.data;
+}
+
+export async function deleteUser(userId: number): Promise<User> {
+  const response = await apiClient.delete<User>(`/auth/users/${userId}`);
+  return response.data;
+}
