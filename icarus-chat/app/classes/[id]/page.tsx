@@ -69,7 +69,12 @@ export default function ClassPage() {
       ]);
       setClassData(classRecord);
       setTeachers(teacherList);
-      setUsersById(userList.reduce((acc, entry) => ({ ...acc, [entry.id]: entry }), {}));
+      setUsersById(
+        userList.reduce<Record<number, User>>((acc, entry) => {
+          if (entry.id === undefined) return acc;
+          return { ...acc, [entry.id]: entry };
+        }, {}),
+      );
     } catch (err) {
       setError("Unable to load this class right now.");
     } finally {
