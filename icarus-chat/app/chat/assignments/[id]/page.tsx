@@ -5,8 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 
 import ChatLayout from "@/components/section/chatlayout/default";
 import { authStore } from "@/app/lib/auth/authStore";
-import { getAssignment, getFile } from "@/app/lib/api/school";
-import { AssignmentRead, FileRead } from "@/app/types/school";
+import { getAssignment, getFile, getStudent, listClasses, listStudents } from "@/app/lib/api/school";
+import { AssignmentRead, ClassRead, FileRead } from "@/app/types/school";
 import { Button } from "@/components/ui/button";
 
 export default function AssignmentChatPage() {
@@ -16,6 +16,9 @@ export default function AssignmentChatPage() {
   const [loading, setLoading] = useState(true);
   const [assignment, setAssignment] = useState<AssignmentRead | null>(null);
   const [files, setFiles] = useState<FileRead[]>([]);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [classes, setClasses] = useState<ClassRead[]>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const assignmentId = useMemo(() => {
@@ -40,6 +43,7 @@ export default function AssignmentChatPage() {
           router.replace("/dashboard");
           return;
         }
+        setUserId(user.id ?? null);
         setCheckingAuth(false);
       })
       .catch(() => {
@@ -86,6 +90,41 @@ export default function AssignmentChatPage() {
     };
   }, [assignmentId, checkingAuth]);
 
+  useEffect(() => {
+    if (checkingAuth || !userId) return;
+
+    let isMounted = true;
+    setClassesLoading(true);
+
+    (async () => {
+      try {
+        const [allClasses, studentList] = await Promise.all([listClasses(), listStudents()]);
+        const studentRecord = studentList.find((entry) => entry.user_id === userId) ?? null;
+        const detailedStudent = studentRecord ? await getStudent(studentRecord.id) : null;
+
+        if (!isMounted) return;
+        if (detailedStudent) {
+          const enrolledClassIds = detailedStudent.class_ids ?? [];
+          const enrolledClasses = allClasses.filter(
+            (classItem) => enrolledClassIds.includes(classItem.id) || classItem.student_ids?.includes(detailedStudent.id),
+          );
+          setClasses(enrolledClasses);
+        } else {
+          setClasses([]);
+        }
+      } catch (err) {
+        if (!isMounted) return;
+        setClasses([]);
+      } finally {
+        if (isMounted) setClassesLoading(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [checkingAuth, userId]);
+
   if (checkingAuth || loading) {
     return (
       <div className="grid h-dvh place-items-center px-6">
@@ -116,6 +155,12 @@ export default function AssignmentChatPage() {
         description: assignment.description,
         dueAt: assignment.due_at,
         files,
+      }}
+      classNavigation={{
+        classes,
+        currentClassId: assignment.class_id,
+        loading: classesLoading,
+        onNavigate: (path) => router.push(path),
       }}
     />
   );

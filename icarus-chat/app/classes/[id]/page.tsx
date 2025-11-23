@@ -19,9 +19,9 @@ import { User } from "@/app/types/auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlarmClock, Home, Menu } from "lucide-react";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { AlarmClock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClassNavigationSidebar } from "@/components/section/sidebar/class-navigation";
 
 export default function ClassPage() {
   const router = useRouter();
@@ -33,7 +33,6 @@ export default function ClassPage() {
   const [usersById, setUsersById] = useState<Record<number, User>>({});
   const [classes, setClasses] = useState<ClassRead[]>([]);
   const [student, setStudent] = useState<StudentRead | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,70 +161,12 @@ export default function ClassPage() {
   return (
     <div className="min-h-dvh bg-background">
       <Navbar actions={[{ text: "Logout", onClick: handleLogout }]} />
-      <div className="fixed left-4 top-20 z-40 md:left-6">
-        <Button
-          variant="outline"
-          size="icon"
-          className="shadow-sm"
-          onClick={() => setSidebarOpen(true)}
-          aria-label="Open class sidebar"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-      </div>
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[280px] px-5 py-6 sm:w-80">
-          <SheetTitle className="sr-only">Classes navigation</SheetTitle>
-          <div className="flex flex-col gap-6 pt-1">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Classes</h2>
-                <Badge variant="secondary">{classes.length}</Badge>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Button
-                variant="ghost"
-                className="w-full justify-start gap-2"
-                onClick={() => {
-                  router.push("/student");
-                  setSidebarOpen(false);
-                }}
-              >
-                <Home className="h-4 w-4" />
-                Home
-              </Button>
-              <div className="rounded-lg border bg-muted/40 p-2">
-                {loading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : classes.length ? (
-                  <div className="space-y-2">
-                    {classes.map((classItem) => (
-                      <Button
-                        key={classItem.id}
-                        variant={classItem.id === classId ? "secondary" : "ghost"}
-                        className="w-full justify-between"
-                        onClick={() => {
-                          router.push(`/classes/${classItem.id}`);
-                          setSidebarOpen(false);
-                        }}
-                      >
-                        <span className="truncate text-left">{classItem.name}</span>
-                        {classItem.id === classId ? <Badge variant="outline">Viewing</Badge> : null}
-                      </Button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="px-2 text-sm text-muted-foreground">No enrolled classes yet.</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      <ClassNavigationSidebar
+        classes={classes}
+        currentClassId={classId}
+        loading={loading}
+        onNavigate={(path) => router.push(path)}
+      />
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 pb-16 pt-10">
         {loading ? (
           <Skeleton className="h-36 w-full" />
