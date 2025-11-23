@@ -5,14 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 
 import Navbar from "@/components/section/navbar/default";
 import { authStore } from "@/app/lib/auth/authStore";
-import { getClass, listAssignments, listTeachers } from "@/app/lib/api/school";
+import {
+  getClass,
+  getStudent,
+  listAssignments,
+  listClasses,
+  listStudents,
+  listTeachers,
+} from "@/app/lib/api/school";
 import { listUsers } from "@/app/lib/api/auth";
-import { ClassRead, TeacherRead, AssignmentRead } from "@/app/types/school";
+import { ClassRead, TeacherRead, AssignmentRead, StudentRead } from "@/app/types/school";
 import { User } from "@/app/types/auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlarmClock } from "lucide-react";
+import { AlarmClock, Home, Menu } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 export default function ClassPage() {
   const router = useRouter();
@@ -22,6 +31,9 @@ export default function ClassPage() {
   const [teachers, setTeachers] = useState<TeacherRead[]>([]);
   const [assignments, setAssignments] = useState<AssignmentRead[]>([]);
   const [usersById, setUsersById] = useState<Record<number, User>>({});
+  const [classes, setClasses] = useState<ClassRead[]>([]);
+  const [student, setStudent] = useState<StudentRead | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,9 +56,6 @@ export default function ClassPage() {
           return;
         }
         setUser(currentUser);
-        if (classId) {
-          fetchClassData();
-        }
       })
       .catch(() => {
         if (!isMounted) return;
@@ -57,19 +66,33 @@ export default function ClassPage() {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, classId]);
+  }, [router]);
 
-  const fetchClassData = async () => {
+  useEffect(() => {
+    if (user && classId) {
+      fetchClassData(user);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, classId]);
+
+  const fetchClassData = async (currentUser: User) => {
     if (!classId) return;
     setLoading(true);
     setError(null);
     try {
-      const [classRecord, teacherList, assignmentList, userList] = await Promise.all([
+      const [classRecord, teacherList, assignmentList, userList, classList, studentList] =
+        await Promise.all([
         getClass(classId),
         listTeachers(),
         listAssignments(),
         listUsers(),
+        listClasses(),
+        listStudents(),
       ]);
+
+      const studentRecord = studentList.find((entry) => entry.user_id === currentUser.id) ?? null;
+      const detailedStudent = studentRecord ? await getStudent(studentRecord.id) : null;
+
       setClassData(classRecord);
       setTeachers(teacherList);
       const classAssignments = assignmentList
@@ -86,6 +109,19 @@ export default function ClassPage() {
           return { ...acc, [entry.id]: entry };
         }, {}),
       );
+
+      if (detailedStudent) {
+        const enrolledClassIds = detailedStudent.class_ids ?? [];
+        const enrolledClasses = classList.filter(
+          (classItem) =>
+            enrolledClassIds.includes(classItem.id) || classItem.student_ids?.includes(detailedStudent.id),
+        );
+        setClasses(enrolledClasses);
+        setStudent(detailedStudent);
+      } else {
+        setClasses([]);
+        setStudent(null);
+      }
     } catch (err) {
       setError("Unable to load this class right now.");
     } finally {
@@ -126,6 +162,73 @@ export default function ClassPage() {
   return (
     <div className="min-h-dvh bg-background">
       <Navbar actions={[{ text: "Logout", onClick: handleLogout }]} />
+      <div className="fixed left-4 top-20 z-40 md:left-6">
+        <Button
+          variant="outline"
+          size="icon"
+          className="shadow-sm"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open class sidebar"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetContent side="left" className="w-[280px] sm:w-80">
+          <div className="flex flex-col gap-6">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">Quick navigation</p>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Classes</h2>
+                <Badge variant="secondary">{classes.length}</Badge>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-2"
+                onClick={() => {
+                  router.push("/student");
+                  setSidebarOpen(false);
+                }}
+              >
+                <Home className="h-4 w-4" />
+                Home
+              </Button>
+              <div className="rounded-lg border bg-muted/40 p-2">
+                {loading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : classes.length ? (
+                  <div className="space-y-2">
+                    {classes.map((classItem) => (
+                      <Button
+                        key={classItem.id}
+                        variant={classItem.id === classId ? "secondary" : "ghost"}
+                        className="w-full justify-between"
+                        onClick={() => {
+                          router.push(`/classes/${classItem.id}`);
+                          setSidebarOpen(false);
+                        }}
+                      >
+                        <span className="truncate text-left">{classItem.name}</span>
+                        {classItem.id === classId ? <Badge variant="outline">Viewing</Badge> : null}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-2 text-sm text-muted-foreground">No enrolled classes yet.</p>
+                )}
+              </div>
+            </div>
+            {student ? (
+              <p className="text-xs text-muted-foreground">Signed in as {user?.username ?? "Student"}</p>
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 pb-16 pt-10">
         {loading ? (
           <Skeleton className="h-36 w-full" />
