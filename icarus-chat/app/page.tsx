@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { authStore } from "@/app/lib/auth/authStore";
-import { User } from "@/app/types/auth";
 import { LoginDialog, SignUpDialog } from "@/components/ui/custom/auth-dialogs";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +17,7 @@ export default function LandingPage() {
 
     authStore.hydrate().then((user) => {
       if (!isMounted) return;
-      if (user) router.replace(user.is_teacher ? "/dashboard" : "/chat");
+      if (user) router.replace("/chat");
     });
 
     return () => {
@@ -26,8 +25,8 @@ export default function LandingPage() {
     };
   }, [router]);
 
-  const handleAuthSuccess = (user: User) => {
-    router.push(user.is_teacher ? "/dashboard" : "/chat");
+  const handleAuthSuccess = () => {
+    router.push("/chat");
   };
 
   return (
