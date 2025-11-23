@@ -98,7 +98,7 @@ export default function DashboardPage() {
           return;
         }
         if (!currentUser.is_teacher) {
-          router.replace("/chat");
+          router.replace("/student");
           return;
         }
         setUser(currentUser);
