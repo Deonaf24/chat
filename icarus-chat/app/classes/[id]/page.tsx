@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlarmClock, Home, Menu } from "lucide-react";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
 export default function ClassPage() {
@@ -174,9 +174,10 @@ export default function ClassPage() {
         </Button>
       </div>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[280px] px-5 sm:w-80">
-          <div className="flex flex-col gap-6">
-            <div className="space-y-1">
+        <SheetContent side="left" className="w-[280px] px-5 py-6 sm:w-80">
+          <SheetTitle className="sr-only">Classes navigation</SheetTitle>
+          <div className="flex flex-col gap-6 pt-1">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Classes</h2>
                 <Badge variant="secondary">{classes.length}</Badge>
