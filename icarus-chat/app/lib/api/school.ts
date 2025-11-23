@@ -83,6 +83,17 @@ export async function enrollStudentToClass(
   return response.data;
 }
 
+export async function joinClassByCode(
+    join_code: string,
+    student_id: number
+  ): Promise<ClassRead> {
+    const response = await apiClient.post<ClassRead>("/school/classes/join", {
+      join_code,
+      student_id,
+    });
+    return response.data;
+  }
+
 
 // ==========================================================
 // ASSIGNMENTS
