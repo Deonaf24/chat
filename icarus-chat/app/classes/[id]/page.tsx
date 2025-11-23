@@ -174,10 +174,9 @@ export default function ClassPage() {
         </Button>
       </div>
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="w-[280px] sm:w-80">
+        <SheetContent side="left" className="w-[280px] px-5 sm:w-80">
           <div className="flex flex-col gap-6">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">Quick navigation</p>
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Classes</h2>
                 <Badge variant="secondary">{classes.length}</Badge>
@@ -223,9 +222,6 @@ export default function ClassPage() {
                 )}
               </div>
             </div>
-            {student ? (
-              <p className="text-xs text-muted-foreground">Signed in as {user?.username ?? "Student"}</p>
-            ) : null}
           </div>
         </SheetContent>
       </Sheet>
