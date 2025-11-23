@@ -47,7 +47,6 @@ export function ClassNavigationSidebar({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Classes</h2>
-                <Badge variant="secondary">{classes.length}</Badge>
               </div>
             </div>
             <div className="space-y-2">
@@ -81,7 +80,6 @@ export function ClassNavigationSidebar({
                         }}
                       >
                         <span className="truncate text-left">{classItem.name}</span>
-                        {classItem.id === currentClassId ? <Badge variant="outline">Viewing</Badge> : null}
                       </Button>
                     ))}
                   </div>
