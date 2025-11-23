@@ -42,7 +42,7 @@ interface NavbarProps {
 
 export default function Navbar({
   logo = <LaunchUI />,
-  name = "Stop LLMs",
+  name = "Socratica",
   homeUrl = "/",
   mobileLinks = [
     { text: "Home", href: "/" },

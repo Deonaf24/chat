@@ -91,7 +91,7 @@ export default function Navigation({
     },
   ],
   logo = <LaunchUI />,
-  logoTitle = "Stop LLMs",
+  logoTitle = "Socratica",
   logoDescription = "Mindful guardrails that help you stay sharp without leaning on language models for every decision.",
   logoHref = "/",
   introItems = [
