@@ -135,7 +135,12 @@ export default function DashboardPage() {
 
       setClasses(teacherClasses);
       setStudents(studentList);
-      setUsersById(userList.reduce((acc, entry) => ({ ...acc, [entry.id]: entry }), {}));
+      setUsersById(
+        userList.reduce<Record<number, User>>((acc, entry) => {
+          if (entry.id === undefined) return acc;
+          return { ...acc, [entry.id]: entry };
+        }, {}),
+      );
 
       const teacherAssignments = assignmentList.filter((assignment) =>
         teacherClasses.some((classItem) => classItem.id === assignment.class_id),

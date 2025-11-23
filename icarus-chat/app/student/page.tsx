@@ -116,7 +116,12 @@ export default function StudentDashboardPage() {
       setStudent(detailedStudent);
       setClasses(enrolledClasses);
       setTeachers(teacherList);
-      setUsersById(userList.reduce((acc, entry) => ({ ...acc, [entry.id]: entry }), {}));
+      setUsersById(
+        userList.reduce<Record<number, User>>((acc, entry) => {
+          if (entry.id === undefined) return acc;
+          return { ...acc, [entry.id]: entry };
+        }, {}),
+      );
     } catch (err) {
       setError("Unable to load your classes right now.");
     } finally {
