@@ -34,8 +34,9 @@ export interface StudentRead extends StudentBase, TimestampModel {
 
 export interface ClassBase {
     name: string;
-    description?: string | null; // Optional[str] maps to string | null | undefined
+    description?: string | null;
     teacher_id?: number | null;
+    join_code: string;
 }
 
 export interface ClassCreate extends ClassBase {
@@ -44,6 +45,7 @@ export interface ClassCreate extends ClassBase {
 
 export interface ClassRead extends ClassBase, TimestampModel {
     id: number;
+    join_code: string;
     student_ids: number[];
     assignment_ids: number[];
 }

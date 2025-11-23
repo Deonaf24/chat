@@ -25,7 +25,7 @@ export default function ChatPage() {
           router.replace("/dashboard");
           return;
         }
-        setChecking(false);
+        router.replace("/student");
       })
       .catch(() => {
         if (!isMounted) return;
