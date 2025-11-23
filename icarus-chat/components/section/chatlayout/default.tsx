@@ -68,8 +68,8 @@ export default function ChatLayout({
       </div>
 
       <div className="min-h-0">
-        <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-4 px-6 py-4 lg:grid lg:grid-cols-[minmax(0,1.5fr),minmax(300px,0.9fr)]">
-          <div className="flex min-h-0 flex-col lg:order-1">
+        <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-1 gap-4 px-6 py-4 lg:grid-cols-[minmax(0,1.6fr),minmax(320px,1fr)]">
+          <div className="flex min-h-0 flex-col lg:col-start-1 lg:row-start-1">
             <div className="min-h-0 flex-1">
               <ChatMessageList
                 messages={state.messages}
@@ -80,7 +80,7 @@ export default function ChatLayout({
           </div>
 
           {assignment ? (
-            <aside className="lg:order-2 lg:pl-2 lg:pt-1">
+            <aside className="lg:col-start-2 lg:row-start-1 lg:self-start lg:pt-1">
               <div className="rounded-xl border bg-card/60 p-4 shadow-sm lg:sticky lg:top-28">
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-2">
