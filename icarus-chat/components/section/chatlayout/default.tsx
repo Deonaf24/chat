@@ -35,7 +35,7 @@ export default function ChatLayout({
   classNavigation?: ClassNavigationContext;
 }) {
   const router = useRouter();
-  const { state, set, actions } = useChatController(assignment.title);
+  const { state, set, actions } = useChatController(assignment.title + assignment.dueAt);
   
 
   const chatHeightStyle = {
