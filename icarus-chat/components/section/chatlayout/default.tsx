@@ -14,6 +14,7 @@ import { ClassNavigationSidebar } from "../sidebar/class-navigation";
 import { ClassRead } from "@/app/types/school";
 
 type AssignmentChatContext = {
+  id: number;
   title: string;
   description?: string | null;
   dueAt?: string | Date | null;
@@ -35,7 +36,7 @@ export default function ChatLayout({
   classNavigation?: ClassNavigationContext;
 }) {
   const router = useRouter();
-  const { state, set, actions } = useChatController(assignment.title + assignment.dueAt);
+  const { state, set, actions } = useChatController(String(assignment.id));
   
 
   const chatHeightStyle = {
