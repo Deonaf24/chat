@@ -31,11 +31,12 @@ export default function ChatLayout({
   assignment,
   classNavigation,
 }: {
-  assignment?: AssignmentChatContext;
+  assignment: AssignmentChatContext;
   classNavigation?: ClassNavigationContext;
 }) {
   const router = useRouter();
-  const { state, set, actions } = useChatController();
+  const { state, set, actions } = useChatController(assignment.title);
+  
 
   const chatHeightStyle = {
     "--chat-h": "clamp(560px, 70dvh, 720px)",

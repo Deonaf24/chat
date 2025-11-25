@@ -6,7 +6,7 @@ import { llm } from "@/app/lib/llm/llm";
 import { rag } from "@/app/lib/rag/rag";
 import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 
-export function useChatController() {
+export function useChatController(assignment_title: string)  {
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "submitted">("idle");
   const [input, setInput] = useState("");
@@ -43,7 +43,7 @@ export function useChatController() {
 
     if (hasAttachments) {
       const realFiles = await toFilesFromUiParts(message.files!);
-      await Promise.all(realFiles.map((f) => rag.uploadOne(f)));
+      await Promise.all(realFiles.map((f) => rag.uploadOne(f, assignment_title)));
       setHasFiles(true);
     }
 
@@ -60,12 +60,12 @@ export function useChatController() {
         
         if (level == 2){
             const newprompt = bugFix + userText;
-            const reply = await llm.generate(level, subject, qNumber, newprompt, history);
+            const reply = await llm.generate(assignment_title, level, subject, qNumber, newprompt, history);
             push("assistant", String(reply ?? ""));
             setHistory(pendingHistory + `A: ${reply}\n`);
         }
         else{
-            const reply = await llm.generate(level, subject, qNumber, userText, history);
+            const reply = await llm.generate(assignment_title, level, subject, qNumber, userText, history);
             push("assistant", String(reply ?? ""));
             setHistory(pendingHistory + `A: ${reply}\n`);
         }
@@ -81,7 +81,7 @@ export function useChatController() {
     if (!lastUserMessage) return;
     setStatus("submitted");
     try {
-      const reply = await llm.generate(level, subject, qNumber, lastUserMessage, history);
+      const reply = await llm.generate(assignment_title, level, subject, qNumber, lastUserMessage, history);
       replaceLastAssistant(String(reply ?? ""));
     } catch {
       replaceLastAssistant("Retry failed — please try again.");

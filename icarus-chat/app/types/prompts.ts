@@ -1,4 +1,5 @@
 export interface PromptRequest {
+    assignment_id: string,
     level: string,
     subject: string,
     q_number: string,
