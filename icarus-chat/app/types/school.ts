@@ -63,7 +63,7 @@ export interface AssignmentCreate extends AssignmentBase {
 }
 
 export interface AssignmentRead extends AssignmentBase, TimestampModel {
-    id: number;
+    id: string;
     file_ids: number[];
 }
 

@@ -151,6 +151,7 @@ export default function AssignmentChatPage() {
   return (
     <ChatLayout
       assignment={{
+        id: assignment.id,
         title: assignment.title,
         description: assignment.description,
         dueAt: assignment.due_at,

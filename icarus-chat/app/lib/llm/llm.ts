@@ -4,7 +4,7 @@ import { PromptRequest, GenerateResponse } from "@/app/types/prompts";
 export const llm = {
     async generate(assignment_id: string, level: number, subject: string, q_number: string, user_message: string, history: string): Promise<string> {
         const req: PromptRequest = {
-            assignment_id: assignment_id, 
+            assignment_id: assignment_id.toString(), 
             level: "L" + level,
             subject: subject,
             q_number: q_number,

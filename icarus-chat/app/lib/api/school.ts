@@ -116,6 +116,27 @@ export async function getAssignment(id: number): Promise<AssignmentRead> {
   return response.data;
 }
 
+export async function uploadAssignmentFile(
+  assignmentId: string,
+  file: File
+): Promise<FileRead> {
+  const form = new FormData();
+  form.append("assignment_id", assignmentId);
+  form.append("upload", file);
+
+  const response = await apiClient.post<FileRead>(
+    "/school/files/upload",
+    form,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+
+  return response.data;
+}
+
 
 // ==========================================================
 // FILES

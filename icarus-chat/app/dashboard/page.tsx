@@ -20,6 +20,7 @@ import {
   createFile,
   listStudents,
   listTeachers,
+  uploadAssignmentFile,
 } from "@/app/lib/api/school";
 import { listUsers } from "@/app/lib/api/auth";
 import { postUpload } from "@/app/lib/api/upload";
@@ -176,10 +177,10 @@ export default function DashboardPage() {
   );
 
   const analyticsForAssignment = (assignment: AssignmentRead): AssignmentAnalytics => {
-    const base = (assignment.id % 7) * 10;
+    const base = (Number(assignment.id) % 7) * 10;
     const confusionRate = Math.min(95, 20 + base);
-    const hardestQuestion = `Question ${(assignment.id % 5) + 1}`;
-    const strongestQuestion = `Question ${((assignment.id + 2) % 5) + 1}`;
+    const hardestQuestion = `Question ${(Number(assignment.id) % 5) + 1}`;
+    const strongestQuestion = `Question ${((Number(assignment.id) + 2) % 5) + 1}`;
 
     return {
       confusionRate,
@@ -221,12 +222,7 @@ export default function DashboardPage() {
       const newAssignment = await createAssignment(payload);
 
       if (assignmentFile) {
-        const uploadResult = await postUpload(assignmentFile);
-        await createFile({
-          filename: uploadResult.filename,
-          path: uploadResult.filename,
-          assignment_id: newAssignment.id,
-        });
+        await uploadAssignmentFile(newAssignment.id, assignmentFile);
       }
 
       setAssignments((prev) => [newAssignment, ...prev]);
