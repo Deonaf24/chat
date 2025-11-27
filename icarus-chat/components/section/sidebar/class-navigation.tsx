@@ -28,7 +28,7 @@ export function ClassNavigationSidebar({
 
   return (
     <>
-      <div className="fixed left-4 top-20 z-40 md:left-6">
+      <div className="fixed left-4 top-20 z-50 md:left-6">
         <Button
           variant="outline"
           size="icon"
