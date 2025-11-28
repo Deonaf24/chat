@@ -2,16 +2,17 @@
 
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, FileText } from "lucide-react";
 
 import Navbar from "@/components/section/navbar/default";
-import { Badge } from "@/components/ui/badge";
 import { ChatInputBar } from "../chatinputbar/default";
 import { ChatMessageList } from "../chatbox/default";
 import { useChatController } from "@/app/hooks/useChatController";
 import { authStore } from "@/app/lib/auth/authStore";
 import { ClassNavigationSidebar } from "../sidebar/class-navigation";
 import { ClassRead } from "@/app/types/school";
+import { useFilePreview } from "@/app/hooks/useFilePreview";
+import { AssignmentSidebar } from "./assignment-sidebar";
+import { PdfPreviewPanel } from "./pdf-preview-panel";
 
 type AssignmentChatContext = {
   id: string
@@ -36,8 +37,9 @@ export default function ChatLayout({
   classNavigation?: ClassNavigationContext;
 }) {
   const router = useRouter();
-  const { state, set, actions } = useChatController(assignment.id);
-  
+  const { state: chatState, set, actions } = useChatController(assignment.id);
+  const { state: previewState, openPreview, closePreview } = useFilePreview();
+
 
   const chatHeightStyle = {
     "--chat-h": "clamp(560px, 70dvh, 720px)",
@@ -49,6 +51,7 @@ export default function ChatLayout({
   };
 
   const formattedDueAt = assignment ? formatDueAt(assignment.dueAt) : null;
+  const isPreviewOpen = Boolean(previewState.file);
 
   return (
     <div style={chatHeightStyle} className="h-dvh grid grid-rows-[auto,1fr,auto]">
@@ -72,81 +75,56 @@ export default function ChatLayout({
 
       {/* MAIN CONTENT AREA (CHAT + RIGHT SIDEBAR) */}
       <div className="min-h-0 flex h-full">
-
-        {/* EMPTY SPACE (LEFT) */}
-        {assignment ? (
-          <aside className="w-[300px] border-l bg-card/60 p-4 overflow-y-auto">
-          </aside>
-        ) : null}
-
-        {/* CHAT AREA (CENTER) */}
-        <div className="flex-1 flex flex-col px-6 py-4 overflow-y-auto">
-          <div className="min-h-0 flex-1">
-            <div className="mx-auto w-full max-w-6xl">
-              <ChatMessageList
-                messages={state.messages}
-                loading={state.status === "submitted"}
-                onRetry={actions.regenerate}
-              />
+        <div className="flex flex-1 min-w-0">
+          {/* CHAT AREA (CENTER) */}
+          <div
+            className={`${isPreviewOpen ? "w-1/2" : "flex-1"} min-w-0 flex flex-col px-6 py-4 overflow-y-auto transition-[width] duration-200`}
+          >
+            <div className="min-h-0 flex-1">
+              <div className="mx-auto w-full max-w-6xl">
+                <ChatMessageList
+                  messages={chatState.messages}
+                  loading={chatState.status === "submitted"}
+                  onRetry={actions.regenerate}
+                />
+              </div>
             </div>
           </div>
+
+          {/* ASSIGNMENT SIDEBAR / PREVIEW (RIGHT) */}
+          {assignment ? (
+            isPreviewOpen ? (
+              <PdfPreviewPanel
+                filename={previewState.file?.filename}
+                previewUrl={previewState.url}
+                loading={previewState.loading}
+                error={previewState.error}
+                onClose={closePreview}
+              />
+            ) : (
+              <AssignmentSidebar
+                title={assignment.title}
+                description={assignment.description}
+                formattedDueAt={formattedDueAt}
+                files={assignment.files}
+                onFileClick={openPreview}
+              />
+            )
+          ) : null}
         </div>
-
-        {/* ASSIGNMENT SIDEBAR (RIGHT) */}
-        {assignment ? (
-          <aside className="w-[310px] border-l bg-card/60 p-4 overflow-y-auto shadow-sm">
-            <div className="flex flex-col items-start text-left gap-3 sticky top-3">
-
-              <div className="flex flex-col items-start gap-2">
-
-                {formattedDueAt ? (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <CalendarClock className="h-3.5 w-3.5" />
-                    <span>Due {formattedDueAt}</span>
-                  </Badge>
-                ) : null}
-              </div>
-
-              <h1 className="text-xl font-semibold leading-tight">
-                {assignment.title}
-              </h1>
-
-              {assignment.description ? (
-                <p className="text-sm text-muted-foreground">{assignment.description}</p>
-              ) : null}
-
-              {assignment.files?.length ? (
-                <div className="flex flex-col items-start gap-2 mt-2">
-                  {assignment.files.map((file) => (
-                    <Badge
-                      key={file.id}
-                      variant="outline"
-                      className="flex items-center gap-1"
-                    >
-                      <FileText className="h-3.5 w-3.5" />
-                      <span className="truncate max-w-[12rem]">{file.filename}</span>
-                    </Badge>
-                  ))}
-                </div>
-              ) : null}
-
-            </div>
-          </aside>
-        ) : null}
-
       </div>
 
       {/* BOTTOM INPUT BAR */}
       <div className="border-t bg-background">
         <div className="mx-auto w-full max-w-6xl px-6 py-3">
           <ChatInputBar
-            value={state.input}
+            value={chatState.input}
             onChange={set.setInput}
             onSubmit={actions.handleSubmit}
-            status={state.status}
-            level={state.level}
-            subject={state.subject}
-            qNumber={state.qNumber}
+            status={chatState.status}
+            level={chatState.level}
+            subject={chatState.subject}
+            qNumber={chatState.qNumber}
             setLevel={set.setLevel}
             setSubject={set.setSubject}
             setQNumber={set.setQNumber}
