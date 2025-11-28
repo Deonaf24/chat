@@ -156,3 +156,7 @@ export async function getFile(id: number): Promise<FileRead> {
   const response = await apiClient.get<FileRead>(`/school/files/${id}`);
   return response.data;
 }
+
+export function getFilePreviewUrl(fileId: number): string {
+  return `${apiClient.defaults.baseURL}/school/files/${fileId}/download`;
+}
