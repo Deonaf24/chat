@@ -156,3 +156,16 @@ export async function getFile(id: number): Promise<FileRead> {
   const response = await apiClient.get<FileRead>(`/school/files/${id}`);
   return response.data;
 }
+
+export async function getFilePreviewUrl(id: number): Promise<string> {
+  const downloadPath = `/school/files/${id}/download`;
+  const base = apiClient.defaults.baseURL;
+
+  if (!base) return downloadPath;
+
+  try {
+    return new URL(downloadPath, base).toString();
+  } catch (err) {
+    return downloadPath;
+  }
+}
