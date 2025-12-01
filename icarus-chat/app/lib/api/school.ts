@@ -156,3 +156,8 @@ export async function getFile(id: number): Promise<FileRead> {
   const response = await apiClient.get<FileRead>(`/school/files/${id}`);
   return response.data;
 }
+
+export async function getFilePreviewUrl(id: number): Promise<string> {
+  const response = await apiClient.get<{ url: string } | string>(`/school/files/${id}/download`);
+  return typeof response.data === "string" ? response.data : response.data.url;
+}
