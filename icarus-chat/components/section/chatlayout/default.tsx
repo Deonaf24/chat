@@ -76,6 +76,10 @@ export default function ChatLayout({
       {/* MAIN CONTENT AREA (CHAT + RIGHT SIDEBAR) */}
       <div className="min-h-0 flex h-full">
         <div className="flex flex-1 min-w-0">
+
+          {/* LEFT EMPTY SIDEBAR */}
+          <div className="w-78 border-r bg-background/60" />
+
           {/* CHAT AREA (CENTER) */}
           <div
             className={`${isPreviewOpen ? "w-1/2" : "flex-1"} min-w-0 flex flex-col px-6 py-4 overflow-y-auto transition-[width] duration-200`}
