@@ -156,3 +156,24 @@ export async function getFile(id: number): Promise<FileRead> {
   const response = await apiClient.get<FileRead>(`/school/files/${id}`);
   return response.data;
 }
+
+export async function getFilePreviewUrl(id: number, path?: string): Promise<string> {
+  if (path) return resolveFilePath(path);
+
+  const response = await apiClient.get<FileRead>(`/school/files/${id}`);
+  const filePath = response.data?.path;
+
+  if (!filePath) {
+    throw new Error("File path is missing");
+  }
+
+  return resolveFilePath(filePath);
+}
+
+function resolveFilePath(path: string) {
+  try {
+    return new URL(path, apiClient.defaults.baseURL).toString();
+  } catch (err) {
+    return path;
+  }
+}
