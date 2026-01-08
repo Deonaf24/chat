@@ -7,18 +7,18 @@ import { useRouter } from "next/navigation";
 
 import Navbar from "@/components/section/navbar/default";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClassList } from "@/components/dashboard/ClassList";
 import { TeacherProfileCard } from "@/components/dashboard/TeacherProfileCard";
 import { ClassStatsRow } from "@/components/dashboard/ClassStatsRow";
 import { StudentsCard } from "@/components/dashboard/StudentsCard";
 import { AssignmentsCard } from "@/components/dashboard/AssignmentsCard";
 import { CreateAssignmentDialog } from "@/components/dashboard/CreateAssignmentDialog";
+import { Badge } from "@/components/ui/badge";
 import { useAuthTeacher } from "@/app/hooks/dashboard/useAuthTeacher";
 import { useDashboardData } from "@/app/hooks/dashboard/useDashboardData";
 import { useSelectedClass } from "@/app/hooks/dashboard/useSelectedClass";
 import { useAssignmentForm } from "@/app/hooks/dashboard/useAssignmentForm";
-import { analyticsForAssignment } from "@/app/lib/dashboard/assignmentAnalytics";
 import { authStore } from "@/app/lib/auth/authStore";
 
 export default function DashboardPage() {
@@ -128,11 +128,28 @@ export default function DashboardPage() {
               rosterLabel={selectedClass ? `${selectedClass.student_ids.length} enrolled` : "—"}
             />
 
+            <Card>
+              <CardHeader className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <CardTitle>Class analytics snapshot</CardTitle>
+                  <CardDescription>See top insights for the selected class.</CardDescription>
+                </div>
+                <Badge variant="outline">{selectedClass ? "Ready to review" : "Select a class"}</Badge>
+              </CardHeader>
+              <CardContent className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {selectedClass
+                    ? "Open analytics to view most/least understood assignments and student rankings."
+                    : "Choose a class to unlock analytics insights."}
+                </p>
+                <Button asChild variant="outline" disabled={!selectedClass}>
+                  <Link href={selectedClass ? `/analytics/classes/${selectedClass.id}` : "#"}>View analytics</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
             <StudentsCard students={studentsInSelectedClass} usersById={usersById} />
-            <AssignmentsCard
-              assignments={assignmentsForSelectedClass}
-              analyticsForAssignment={analyticsForAssignment}
-            />
+            <AssignmentsCard assignments={assignmentsForSelectedClass} />
           </div>
         </div>
       </main>
