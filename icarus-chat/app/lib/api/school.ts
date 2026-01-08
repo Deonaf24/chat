@@ -12,6 +12,8 @@ import {
   FileCreate,
   FileRead,
 } from "@/app/types/school";
+import { AssignmentStructureProposal } from "@/app/types/assignmentStructure";
+import { UnderstandingScore } from "@/app/types/analytics";
 
 
 // ==========================================================
@@ -134,6 +136,31 @@ export async function uploadAssignmentFile(
     }
   );
 
+  return response.data;
+}
+
+export async function analyzeAssignment(assignmentId: string): Promise<AssignmentStructureProposal> {
+  const response = await apiClient.post<AssignmentStructureProposal>(
+    `/school/assignments/${assignmentId}/analyze`
+  );
+  return response.data;
+}
+
+export async function updateAssignmentStructure(
+  assignmentId: string,
+  payload: AssignmentStructureProposal
+): Promise<AssignmentStructureProposal> {
+  const response = await apiClient.put<AssignmentStructureProposal>(
+    `/school/assignments/${assignmentId}/structure`,
+    payload
+  );
+  return response.data;
+}
+
+export async function scoreAssignment(assignmentId: string): Promise<UnderstandingScore[]> {
+  const response = await apiClient.post<UnderstandingScore[]>(
+    `/school/assignments/${assignmentId}/score`
+  );
   return response.data;
 }
 

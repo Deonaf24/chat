@@ -1,8 +1,11 @@
 import { BarChart3, BookOpenText } from "lucide-react";
 
+import Link from "next/link";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { AssignmentRead } from "@/app/types/school";
 
 interface AssignmentAnalytics {
@@ -47,10 +50,15 @@ export function AssignmentsCard({ assignments, analyticsForAssignment }: Assignm
                         <p className="text-sm text-muted-foreground">{assignment.description}</p>
                       )}
                     </div>
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <BarChart3 className="h-3.5 w-3.5" />
-                      Analytics ready soon
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        Analytics ready soon
+                      </Badge>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/dashboard/assignments/${assignment.id}`}>Manage</Link>
+                      </Button>
+                    </div>
                   </div>
                   <Separator className="my-3" />
                   <div className="grid gap-3 md:grid-cols-3">
