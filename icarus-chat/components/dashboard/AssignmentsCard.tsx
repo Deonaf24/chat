@@ -58,6 +58,9 @@ export function AssignmentsCard({ assignments, analyticsForAssignment }: Assignm
                       <Button asChild variant="outline" size="sm">
                         <Link href={`/dashboard/assignments/${assignment.id}`}>Manage</Link>
                       </Button>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/analytics/assignments/${assignment.id}`}>View analytics</Link>
+                      </Button>
                     </div>
                   </div>
                   <Separator className="my-3" />

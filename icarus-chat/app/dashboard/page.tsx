@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Loader2, Plus } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import Navbar from "@/components/section/navbar/default";
@@ -110,6 +111,9 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <Button variant="outline" onClick={refresh} disabled={loading}>
                   Refresh data
+                </Button>
+                <Button asChild variant="outline" disabled={!selectedClass}>
+                  <Link href={selectedClass ? `/analytics/classes/${selectedClass.id}` : "#"}>Analytics</Link>
                 </Button>
                 <Button onClick={openDialog} disabled={!selectedClass}>
                   <Plus className="mr-2 h-4 w-4" />
