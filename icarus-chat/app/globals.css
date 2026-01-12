@@ -118,5 +118,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .dark body {
+    background-image: radial-gradient(#262626 1px, transparent 1px);
   }
 }

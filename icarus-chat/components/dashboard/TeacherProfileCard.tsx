@@ -25,7 +25,7 @@ export function TeacherProfileCard({ user, teacher, classCount }: TeacherProfile
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Teacher record</span>
-          <span className="font-medium">{teacher?.id ?? "Pending setup"}</span>
+          <span className="font-medium text-right truncate pl-4">{teacher?.name ?? teacher?.id ?? "Pending setup"}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Classes linked</span>

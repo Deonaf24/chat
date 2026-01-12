@@ -11,7 +11,9 @@ import {
   AssignmentRead,
   FileCreate,
   FileRead,
-} from "@/app/types/school";
+  Material,
+  Concept,
+} from "../../types/school";
 import { AssignmentStructureProposal } from "@/app/types/assignmentStructure";
 import { UnderstandingScore } from "@/app/types/analytics";
 
@@ -86,15 +88,15 @@ export async function enrollStudentToClass(
 }
 
 export async function joinClassByCode(
-    join_code: string,
-    student_id: number
-  ): Promise<ClassRead> {
-    const response = await apiClient.post<ClassRead>("/school/classes/join", {
-      join_code,
-      student_id,
-    });
-    return response.data;
-  }
+  join_code: string,
+  student_id: number
+): Promise<ClassRead> {
+  const response = await apiClient.post<ClassRead>("/school/classes/join", {
+    join_code,
+    student_id,
+  });
+  return response.data;
+}
 
 
 // ==========================================================
@@ -115,6 +117,52 @@ export async function listAssignments(): Promise<AssignmentRead[]> {
 
 export async function getAssignment(id: number): Promise<AssignmentRead> {
   const response = await apiClient.get<AssignmentRead>(`/school/assignments/${id}`);
+  return response.data;
+}
+
+export async function updateAssignment(
+  id: number,
+  data: Partial<AssignmentCreate>
+): Promise<AssignmentRead> {
+  const response = await apiClient.put<AssignmentRead>(`/school/assignments/${id}`, data);
+  return response.data;
+}
+
+export async function getMaterials(classId: number): Promise<Material[]> {
+  const response = await apiClient.get<Material[]>(`/school/classes/${classId}/materials`);
+  return response.data;
+}
+
+export async function createMaterial(
+  classId: number,
+  data: { title: string; description?: string; teacher_id: number; concept_ids?: number[] }
+): Promise<Material> {
+  const response = await apiClient.post<Material>(`/school/classes/${classId}/materials`, {
+    ...data,
+    class_id: classId,
+  });
+  return response.data;
+}
+
+export async function getClassConcepts(classId: number): Promise<Concept[]> {
+  const response = await apiClient.get<Concept[]>(`/school/classes/${classId}/concepts`);
+  return response.data;
+}
+
+export async function analyzeMaterial(materialId: number): Promise<Concept[]> {
+  const response = await apiClient.post<Concept[]>(
+    `/school/materials/${materialId}/analyze`
+  );
+  return response.data;
+}
+
+export async function uploadMaterialFile(materialId: number, file: File): Promise<FileRead> {
+  const formData = new FormData();
+  formData.append("material_id", String(materialId));
+  formData.append("upload", file);
+  const response = await apiClient.post<FileRead>("/school/materials/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 }
 
@@ -195,4 +243,17 @@ export async function getFilePreviewUrl(id: number): Promise<string> {
   } catch (err) {
     return downloadPath;
   }
+}
+
+
+export async function generateLiveQuestions(
+  classId: number,
+  conceptIds: number[],
+  timeLimit: number
+): Promise<{ generate_prompt: string; context_summary: string }> {
+  const response = await apiClient.post<{ generate_prompt: string; context_summary: string }>(
+    `/school/classes/${classId}/live/generate`,
+    { concept_ids: conceptIds, time_limit: timeLimit }
+  );
+  return response.data;
 }

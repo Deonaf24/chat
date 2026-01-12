@@ -8,31 +8,94 @@ export interface UnderstandingScore {
   source: string;
 }
 
+export interface AssignmentScoreSummary {
+  assignment_id: number;
+  assignment_title: string;
+  average_score: number;
+}
+
 export interface StudentAnalytics {
   student_id: number;
   questions_asked: number;
-  easiest_assignment: string | null;
-  hardest_assignment: string | null;
-  most_understood_concept: string | null;
-  least_understood_concept: string | null;
+  easiest_assignment: AssignmentScoreSummary | null;
+  hardest_assignment: AssignmentScoreSummary | null;
+  most_understood_concept: ConceptScoreSummary | null;
+  least_understood_concept: ConceptScoreSummary | null;
+}
+
+export interface ConceptScoreSummary {
+  concept_id: number;
+  concept_name: string;
+  average_score: number;
+}
+
+export interface QuestionScoreSummary {
+  question_id: number;
+  question_prompt: string;
+  average_score: number;
 }
 
 export interface AssignmentAnalytics {
   assignment_id: number;
-  most_understood_concept: string | null;
-  least_understood_concept: string | null;
-  most_understood_question: string | null;
-  least_understood_question: string | null;
+  most_understood_concept: ConceptScoreSummary | null;
+  least_understood_concept: ConceptScoreSummary | null;
+  most_understood_question: QuestionScoreSummary | null;
+  least_understood_question: QuestionScoreSummary | null;
+  student_rankings: StudentScoreSummary[];
+  weakness_groups: WeaknessGroup[];
 }
 
-export interface StudentRanking {
+export interface WeaknessGroup {
+  concept_id: number;
+  concept_name: string;
+  students: StudentScoreSummary[];
+  average_score: number;
+}
+
+export interface StudentScoreSummary {
   student_id: number;
+  student_name: string;
   average_score: number;
 }
 
 export interface ClassAnalytics {
   class_id: number;
-  most_understood_assignment: string | null;
-  least_understood_assignment: string | null;
-  student_rankings: StudentRanking[];
+  most_understood_assignment: AssignmentScoreSummary | null;
+  least_understood_assignment: AssignmentScoreSummary | null;
+  student_rankings: StudentScoreSummary[];
+  weakness_groups: WeaknessGroup[];
+}
+
+export interface ConceptPayload {
+  id?: number;
+  name: string;
+  description?: string | null;
+}
+
+export interface AssignmentQuestionPayload {
+  id?: number;
+  prompt: string;
+  position?: number | null;
+  concept_ids: number[];
+}
+
+export interface QuestionConceptLink {
+  question_id: number;
+  concept_id: number;
+}
+
+export interface AssignmentConceptLink {
+  concept_id: number;
+}
+
+export interface AssignmentStructureReview {
+  assignment_id: number;
+  concepts: ConceptPayload[];
+  questions: AssignmentQuestionPayload[];
+  question_concepts: QuestionConceptLink[];
+  assignment_concepts: AssignmentConceptLink[];
+}
+
+export interface AssignmentStructureReviewRead extends AssignmentStructureReview {
+  structure_approved: boolean;
 }

@@ -5,15 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 
 import Navbar from "@/components/section/navbar/default";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuthTeacher } from "@/app/hooks/dashboard/useAuthTeacher";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDashboardAuth } from "@/app/hooks/dashboard/useDashboardAuth";
 import { getClassAnalytics } from "@/app/lib/api/analytics";
 import { ClassAnalytics } from "@/app/types/analytics";
 
 export default function ClassAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
-  const { loading: authLoading } = useAuthTeacher();
+  const { user, teacher, loading: authLoading } = useDashboardAuth();
   const [analytics, setAnalytics] = useState<ClassAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,55 +80,80 @@ export default function ClassAnalyticsPage() {
         actions={[{ text: "Dashboard", href: "/dashboard" }]}
       />
 
-      <main className="mx-auto max-w-5xl space-y-6 px-6 pb-16 pt-8">
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Class analytics</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Class overview</h1>
+      <main className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:px-8">
+        <div className="mb-8 space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">Class Overview</h1>
+          <p className="text-lg text-muted-foreground">High-level metrics and student rankings for this class.</p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Most understood assignment</CardTitle>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card className="md:col-span-2 lg:col-span-2 border-l-4 border-l-green-500 bg-background/60 shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Most Understood Assignment</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-semibold">
-                {analytics.most_understood_assignment ?? "No data yet"}
+              <div className="text-2xl font-bold truncate" title={analytics.most_understood_assignment?.assignment_title}>
+                {analytics.most_understood_assignment?.assignment_title ?? "No data yet"}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {analytics.most_understood_assignment ? `Avg Score: ${Math.round(analytics.most_understood_assignment.average_score * 100)}%` : "No data"}
               </p>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Least understood assignment</CardTitle>
+          <Card className="md:col-span-2 lg:col-span-2 border-l-4 border-l-red-500 bg-background/60 shadow-md">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Least Understood Assignment</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-semibold">
-                {analytics.least_understood_assignment ?? "No data yet"}
+              <div className="text-2xl font-bold truncate" title={analytics.least_understood_assignment?.assignment_title}>
+                {analytics.least_understood_assignment?.assignment_title ?? "No data yet"}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {analytics.least_understood_assignment ? `Avg Score: ${Math.round(analytics.least_understood_assignment.average_score * 100)}%` : "No data"}
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <CardTitle>Student ranking</CardTitle>
-            <Badge variant="outline">{analytics.student_rankings.length} students</Badge>
+        <Card className="shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/20 px-6 py-4">
+            <div className="space-y-1">
+              <CardTitle>Student Rankings</CardTitle>
+              <CardDescription>Performance leaderboard based on average understanding scores.</CardDescription>
+            </div>
+            <Badge variant="secondary" className="px-3 py-1">{analytics.student_rankings.length} Students</Badge>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {analytics.student_rankings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No scores recorded yet.</p>
+              <div className="p-8 text-center text-muted-foreground">
+                No student analytics available yet.
+              </div>
             ) : (
-              <ol className="space-y-2">
+              <ul className="divide-y divide-border">
                 {analytics.student_rankings.map((ranking, index) => (
-                  <li key={ranking.student_id} className="flex items-center justify-between rounded-lg border p-3">
-                    <div>
-                      <p className="text-sm font-medium">Student #{ranking.student_id}</p>
-                      <p className="text-xs text-muted-foreground">Rank {index + 1}</p>
+                  <li key={ranking.student_id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-medium leading-none">{ranking.student_name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">ID: #{ranking.student_id}</p>
+                      </div>
                     </div>
-                    <Badge variant="secondary">{Math.round(ranking.average_score * 100)}%</Badge>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <span className="text-sm font-bold">{Math.round(ranking.average_score * 100)}%</span>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Score</p>
+                      </div>
+                      {/* Visual indicator bar could go here */}
+                      <div className="h-2 w-16 rounded-full bg-muted overflow-hidden hidden sm:block">
+                        <div className="h-full bg-primary" style={{ width: `${ranking.average_score * 100}%` }} />
+                      </div>
+                    </div>
                   </li>
                 ))}
-              </ol>
+              </ul>
             )}
           </CardContent>
         </Card>

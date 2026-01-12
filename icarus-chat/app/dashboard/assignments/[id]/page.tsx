@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StructureEditor } from "@/components/assignments/StructureEditor";
-import { useAuthTeacher } from "@/app/hooks/dashboard/useAuthTeacher";
+import { useDashboardAuth } from "@/app/hooks/dashboard/useDashboardAuth";
 import { useAssignmentStructure } from "@/app/hooks/assignments/useAssignmentStructure";
 import {
   analyzeAssignment,
@@ -22,7 +22,7 @@ import { AssignmentRead, FileRead } from "@/app/types/school";
 export default function AssignmentDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { loading: authLoading } = useAuthTeacher();
+  const { loading: authLoading } = useDashboardAuth();
   const [assignment, setAssignment] = useState<AssignmentRead | null>(null);
   const [files, setFiles] = useState<FileRead[]>([]);
   const [loading, setLoading] = useState(true);

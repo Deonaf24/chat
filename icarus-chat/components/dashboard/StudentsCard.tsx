@@ -32,7 +32,7 @@ export function StudentsCard({ students, usersById }: StudentsCardProps) {
               <div key={student.id} className="rounded-lg border bg-background px-4 py-3 text-sm shadow-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="font-medium">
-                    {usersById[student.user_id]?.username ?? `Student #${student.id}`}
+                    {student.name ?? usersById[student.user_id]?.username ?? `Student #${student.id}`}
                   </span>
                   <Badge variant="secondary">Enrolled</Badge>
                 </div>

@@ -6,14 +6,14 @@ import { llm } from "@/app/lib/llm/llm";
 import { rag } from "@/app/lib/rag/rag";
 import type { PromptInputMessage } from "@/components/ai-elements/prompt-input";
 
-export function useChatController(assignment_id: string)  {
+export function useChatController(assignment_id: string, initialLevel: number = 1) {
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const [status, setStatus] = useState<"idle" | "submitted">("idle");
   const [input, setInput] = useState("");
   const [lastUserMessage, setLastUserMessage] = useState("");
-  const [level, setLevel] = useState(1);
+  const [level, setLevel] = useState(initialLevel);
   const [subject, setSubject] = useState("math");
-  const [qNumber, setQNumber] = useState("1");
+
   const [history, setHistory] = useState("");
   const [hasFiles, setHasFiles] = useState(false);
   const [bugFix, setBugFix] = useState("THE FOLLOWING SENTENCE IS VERY IMPORTANT AND TAKES PRECEDANCE OVER ALL ELSE: NEVER EVER mention outline and micro steps in the output. Do not use a formulaic template style answer such including the outline plan and microstep when answering this question. Instead give a an depth but socratic natural language response:\n")
@@ -57,17 +57,17 @@ export function useChatController(assignment_id: string)  {
 
       setStatus("submitted");
       try {
-        
-        if (level == 2){
-            const newprompt = bugFix + userText;
-            const reply = await llm.generate(assignment_id, level, subject, qNumber, newprompt, history);
-            push("assistant", String(reply ?? ""));
-            setHistory(pendingHistory + `A: ${reply}\n`);
+
+        if (level == 2) {
+          const newprompt = bugFix + userText;
+          const reply = await llm.generate(assignment_id, level, subject, newprompt, history);
+          push("assistant", String(reply ?? ""));
+          setHistory(pendingHistory + `A: ${reply}\n`);
         }
-        else{
-            const reply = await llm.generate(assignment_id, level, subject, qNumber, userText, history);
-            push("assistant", String(reply ?? ""));
-            setHistory(pendingHistory + `A: ${reply}\n`);
+        else {
+          const reply = await llm.generate(assignment_id, level, subject, userText, history);
+          push("assistant", String(reply ?? ""));
+          setHistory(pendingHistory + `A: ${reply}\n`);
         }
       } catch {
         push("assistant", "You must be logged in in order to send a request.");
@@ -81,7 +81,7 @@ export function useChatController(assignment_id: string)  {
     if (!lastUserMessage) return;
     setStatus("submitted");
     try {
-      const reply = await llm.generate(assignment_id, level, subject, qNumber, lastUserMessage, history);
+      const reply = await llm.generate(assignment_id, level, subject, lastUserMessage, history);
       replaceLastAssistant(String(reply ?? ""));
     } catch {
       replaceLastAssistant("Retry failed — please try again.");
@@ -91,8 +91,8 @@ export function useChatController(assignment_id: string)  {
   };
 
   return {
-    state: { messages, status, input, lastUserMessage, level, subject, qNumber, hasFiles, canSubmit, history },
-    set: { setInput, setLevel, setSubject, setQNumber, setHasFiles, setHistory },
+    state: { messages, status, input, lastUserMessage, hasFiles, canSubmit, history },
+    set: { setInput, setHasFiles, setHistory },
     actions: { handleSubmit, regenerate },
   };
 }

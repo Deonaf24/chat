@@ -3,12 +3,12 @@
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 
-import Navbar from "@/components/section/navbar/default";
+import { ClassDetailNavbar } from "@/components/dashboard/ClassDetailNavbar";
 import { ChatInputBar } from "../chatinputbar/default";
 import { ChatMessageList } from "../chatbox/default";
 import { useChatController } from "@/app/hooks/useChatController";
 import { authStore } from "@/app/lib/auth/authStore";
-import { ClassNavigationSidebar } from "../sidebar/class-navigation";
+// import { ClassNavigationSidebar } from "../sidebar/class-navigation"; // Removed
 import { ClassRead } from "@/app/types/school";
 import { useFilePreview } from "@/app/hooks/useFilePreview";
 import { AssignmentSidebar } from "./assignment-sidebar";
@@ -20,6 +20,7 @@ type AssignmentChatContext = {
   description?: string | null;
   dueAt?: string | Date | null;
   files?: { id: number; filename: string; path: string }[];
+  level?: number;
 };
 
 type ClassNavigationContext = {
@@ -37,7 +38,7 @@ export default function ChatLayout({
   classNavigation?: ClassNavigationContext;
 }) {
   const router = useRouter();
-  const { state: chatState, set, actions } = useChatController(assignment.id);
+  const { state: chatState, set, actions } = useChatController(assignment.id, assignment.level);
   const { state: previewState, openPreview, closePreview } = useFilePreview();
 
 
@@ -54,24 +55,19 @@ export default function ChatLayout({
   const isPreviewOpen = Boolean(previewState.file);
 
   return (
-    <div style={chatHeightStyle} className="h-dvh grid grid-rows-[auto,1fr,auto]">
-
-      {/* LEFT CLASS NAVIGATION */}
-      {classNavigation ? (
-        <ClassNavigationSidebar
+    <div style={chatHeightStyle} className="h-dvh flex flex-col pt-24">
+      {/* Fixed Navbar similar to dashboard */}
+      {classNavigation && (
+        <ClassDetailNavbar
+          className={assignment.title}
           classes={classNavigation.classes}
-          currentClassId={classNavigation.currentClassId}
-          loading={classNavigation.loading}
-          onNavigate={classNavigation.onNavigate}
+          activeTab="chat"
+          onTabChange={() => { }}
+          hideTabs={true}
         />
-      ) : null}
+      )}
 
-      {/* TOP NAVBAR */}
-      <div className="border-b bg-background/60 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto w-full max-w-6xl">
-          <Navbar actions={[{ text: "Logout", variant: "secondary", onClick: handleLogout }]} />
-        </div>
-      </div>
+      {/* TOP NAVBAR - Removed original Navbar */}
 
       {/* MAIN CONTENT AREA (CHAT + RIGHT SIDEBAR) */}
       <div className="min-h-0 flex h-full">
@@ -126,12 +122,6 @@ export default function ChatLayout({
             onChange={set.setInput}
             onSubmit={actions.handleSubmit}
             status={chatState.status}
-            level={chatState.level}
-            subject={chatState.subject}
-            qNumber={chatState.qNumber}
-            setLevel={set.setLevel}
-            setSubject={set.setSubject}
-            setQNumber={set.setQNumber}
             setHasFiles={set.setHasFiles}
             placeholder={assignment ? `Ask a question about ${assignment.title}` : undefined}
           />

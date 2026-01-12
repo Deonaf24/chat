@@ -3,12 +3,12 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 interface ClassStatsRowProps {
   studentsCount: number;
   assignmentsCount: number;
-  rosterLabel: string;
+  rosterLabel?: string;
 }
 
 export function ClassStatsRow({ studentsCount, assignmentsCount, rosterLabel }: ClassStatsRowProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
           <CardDescription>Students</CardDescription>
@@ -19,12 +19,6 @@ export function ClassStatsRow({ studentsCount, assignmentsCount, rosterLabel }: 
         <CardHeader>
           <CardDescription>Assignments</CardDescription>
           <CardTitle className="text-3xl font-semibold">{assignmentsCount}</CardTitle>
-        </CardHeader>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardDescription>Roster coverage</CardDescription>
-          <CardTitle className="text-3xl font-semibold">{rosterLabel}</CardTitle>
         </CardHeader>
       </Card>
     </div>

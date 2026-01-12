@@ -10,6 +10,7 @@ interface AssignmentFormState {
   title: string;
   description: string;
   dueDate: string;
+  level: number;
 }
 
 interface UseAssignmentFormArgs {
@@ -42,6 +43,7 @@ export function useAssignmentForm({
     title: "",
     description: "",
     dueDate: "",
+    level: 1,
   });
   const [assignmentFile, setAssignmentFile] = useState<File | null>(null);
   const [creatingAssignment, setCreatingAssignment] = useState(false);
@@ -49,7 +51,7 @@ export function useAssignmentForm({
   const [showDialog, setShowDialog] = useState(false);
 
   const resetForm = () => {
-    setAssignmentForm({ title: "", description: "", dueDate: "" });
+    setAssignmentForm({ title: "", description: "", dueDate: "", level: 1 });
     setAssignmentFile(null);
   };
 
@@ -79,6 +81,7 @@ export function useAssignmentForm({
         due_at: assignmentForm.dueDate ? new Date(assignmentForm.dueDate) : undefined,
         class_id: selectedClassId,
         teacher_id: teacher?.id ?? user.id,
+        level: assignmentForm.level,
       };
 
       const newAssignment = await createAssignment(payload);

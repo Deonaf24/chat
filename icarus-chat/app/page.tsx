@@ -18,7 +18,7 @@ export default function LandingPage() {
 
     authStore.hydrate().then((user) => {
       if (!isMounted) return;
-      if (user) router.replace(user.is_teacher ? "/dashboard" : "/student");
+      if (user) router.replace("/dashboard");
     });
 
     return () => {
@@ -27,7 +27,7 @@ export default function LandingPage() {
   }, [router]);
 
   const handleAuthSuccess = (user: User) => {
-    router.push(user.is_teacher ? "/dashboard" : "/student");
+    router.push("/dashboard");
   };
 
   return (

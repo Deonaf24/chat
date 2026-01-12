@@ -96,24 +96,21 @@ export function AssignmentsCard({ assignments }: AssignmentsCardProps) {
                   <div className="grid gap-3 md:grid-cols-3">
                     <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs uppercase text-muted-foreground">Least understood concept</p>
-                      <p className="text-base font-medium">
-                        {analytics?.least_understood_concept ?? "Not available yet"}
+                      <p className="text-base font-medium truncate" title={analytics?.least_understood_concept?.concept_name}>
+                        {analytics?.least_understood_concept?.concept_name ?? "Not available yet"}
                       </p>
-                      <p className="text-xs text-muted-foreground">Assignment analytics endpoint.</p>
                     </div>
                     <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs uppercase text-muted-foreground">Least understood question</p>
-                      <p className="text-base font-medium">
-                        {analytics?.least_understood_question ?? "Not available yet"}
+                      <p className="text-base font-medium line-clamp-2" title={analytics?.least_understood_question?.question_prompt}>
+                        {analytics?.least_understood_question?.question_prompt ?? "Not available yet"}
                       </p>
-                      <p className="text-xs text-muted-foreground">Assignment analytics endpoint.</p>
                     </div>
                     <div className="rounded-lg bg-muted/40 p-3">
                       <p className="text-xs uppercase text-muted-foreground">Most understood question</p>
-                      <p className="text-base font-medium">
-                        {analytics?.most_understood_question ?? "Not available yet"}
+                      <p className="text-base font-medium line-clamp-2" title={analytics?.most_understood_question?.question_prompt}>
+                        {analytics?.most_understood_question?.question_prompt ?? "Not available yet"}
                       </p>
-                      <p className="text-xs text-muted-foreground">Assignment analytics endpoint.</p>
                     </div>
                   </div>
                 </div>
