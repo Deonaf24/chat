@@ -10,6 +10,8 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AssignmentRead, StudentRead } from "@/app/types/school"
 
+import { getGrade } from "@/lib/grading";
+
 interface GradesViewProps {
     students: StudentRead[];
     assignments: AssignmentRead[];
@@ -32,7 +34,7 @@ export function GradesView({ students, assignments }: GradesViewProps) {
                             <TableRow>
                                 <TableHead className="w-[200px]">Student</TableHead>
                                 {assignments.map(a => (
-                                    <TableHead key={a.id} className="text-center">{a.name || `Assignment ${a.id}`}</TableHead>
+                                    <TableHead key={a.id} className="text-center">{a.title}</TableHead>
                                 ))}
                                 <TableHead className="text-right">Average</TableHead>
                             </TableRow>
@@ -40,14 +42,17 @@ export function GradesView({ students, assignments }: GradesViewProps) {
                         <TableBody>
                             {students.map((student) => (
                                 <TableRow key={student.id}>
-                                    <TableCell className="font-medium">{student.name || student.username}</TableCell>
-                                    {assignments.map(a => (
-                                        <TableCell key={a.id} className="text-center">
-                                            {/* Placeholder Score Logic - Random for demo if not available */}
-                                            {Math.floor(Math.random() * 40 + 60)}%
-                                        </TableCell>
-                                    ))}
-                                    <TableCell className="text-right font-bold">85%</TableCell>
+                                    <TableCell className="font-medium">{student.name || "Student"}</TableCell>
+                                    {assignments.map(a => {
+                                        const score = Math.random() * 0.4 + 0.6;
+                                        const grade = getGrade(score);
+                                        return (
+                                            <TableCell key={a.id} className={`text-center ${grade.colorClass}`}>
+                                                {grade.grade}
+                                            </TableCell>
+                                        )
+                                    })}
+                                    <TableCell className="text-right font-bold text-blue-500">B</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

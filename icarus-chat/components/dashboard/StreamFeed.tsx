@@ -14,13 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Announcement, Poll, AssignmentRead, Material } from "@/app/types/school";
 
-interface StreamFeedProps {
-    assignments: AssignmentRead[];
-    announcements: Announcement[];
-    polls: Poll[];
-    materials?: Material[];
-    classNameLabel?: string;
-}
+import { useClassContext } from "@/app/dashboard/classes/[id]/context";
 
 type StreamItem =
     | { type: 'assignment'; data: AssignmentRead; date: string }
@@ -28,7 +22,8 @@ type StreamItem =
     | { type: 'poll'; data: Poll; date: string }
     | { type: 'material'; data: Material; date: string };
 
-export function StreamFeed({ assignments, announcements, polls, materials, classNameLabel }: StreamFeedProps) {
+export function StreamFeed({ classNameLabel }: { classNameLabel?: string }) {
+    const { assignments, announcements, polls, materials } = useClassContext();
 
     const feedItems = useMemo(() => {
         const items: StreamItem[] = [];

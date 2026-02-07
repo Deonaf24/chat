@@ -1,7 +1,8 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Plus, ChevronRight } from "lucide-react";
 import { Class } from "@/app/types/school";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import { CreationMenu } from "./CreationMenu";
 import { SidebarMenu } from "./SidebarMenu";
+import LaunchUI from "../logos/launch-ui";
 
 interface ClassDetailNavbarProps {
     className: string;
@@ -20,6 +22,7 @@ interface ClassDetailNavbarProps {
     onCreatePoll?: () => void;
     onCreateMaterial?: () => void;
     hideTabs?: boolean;
+    role?: 'teacher' | 'student';
 }
 
 export function ClassDetailNavbar({
@@ -32,6 +35,7 @@ export function ClassDetailNavbar({
     onCreatePoll,
     onCreateMaterial,
     hideTabs,
+    role,
 }: ClassDetailNavbarProps) {
     return (
         <div
@@ -42,11 +46,17 @@ export function ClassDetailNavbar({
             style={{ paddingRight: 'var(--removed-body-scroll-bar-size)' }}
         >
             <div className="relative mx-auto flex h-24 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center gap-4 z-10">
-                    <SidebarMenu classes={classes} />
-                    <span className="font-semibold text-foreground truncate max-w-[200px]">
-                        {className}
-                    </span>
+                <div className="flex items-center gap-2 sm:gap-4 z-10">
+                    <SidebarMenu classes={classes} role={role} />
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
+                            <span className="font-bold text-lg sm:text-xl hidden sm:block text-foreground">Socratica</span>
+                        </Link>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="font-semibold text-foreground truncate max-w-[100px] sm:max-w-[200px]">
+                            {className}
+                        </span>
+                    </div>
                 </div>
 
                 {!hideTabs && (
@@ -54,35 +64,16 @@ export function ClassDetailNavbar({
                         <Tabs value={activeTab} onValueChange={onTabChange} className="w-auto">
                             <TabsList className="bg-transparent h-10 p-0">
                                 <TabsTrigger
-                                    value="stream"
+                                    value="analytics"
                                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-4"
                                 >
-                                    Stream
+                                    Analytics
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="classwork"
                                     className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-4"
                                 >
                                     Classwork
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    value="materials"
-                                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-4"
-                                >
-                                    Materials
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    value="people"
-                                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-4"
-                                >
-                                    People
-                                </TabsTrigger>
-
-                                <TabsTrigger
-                                    value="analytics"
-                                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none h-full px-4"
-                                >
-                                    Analytics
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="live"

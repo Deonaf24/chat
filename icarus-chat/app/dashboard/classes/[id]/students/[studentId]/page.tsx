@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 import { useDashboardAuth } from "@/app/hooks/dashboard/useDashboardAuth";
 import { useDashboardData } from "@/app/hooks/dashboard/useDashboardData";
+import { useSmoothLoading } from "@/app/hooks/useSmoothLoading";
 import { StudentDetailNavbar } from "@/components/dashboard/StudentDetailNavbar";
 import { StudentAnalyticsView } from "@/components/dashboard/StudentAnalyticsView";
 import Link from "next/link";
@@ -21,11 +22,16 @@ export default function StudentDetailPage() {
     const { user, teacher, student, loading: authLoading } = useDashboardAuth();
     const [activeTab, setActiveTab] = useState("analytics");
 
-    const { classes, students, assignments, loading: dataLoading } = useDashboardData(
+    const { classes, students, assignments, loading: dataLoading, initialized } = useDashboardData(
         user,
         teacher,
         student
     );
+
+    const isStrictlyLoading = authLoading || dataLoading || (!initialized && !!user);
+    const showLoader = useSmoothLoading(isStrictlyLoading);
+
+    // ... (rest of memo logic)
 
     const classId = useMemo(() => {
         const idParam = params?.id;
@@ -47,12 +53,16 @@ export default function StudentDetailPage() {
         assignments.filter(a => a.class_id === classId),
         [assignments, classId]);
 
-    if (authLoading || dataLoading) {
+    if (showLoader) {
         return (
             <div className="grid h-dvh place-items-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         );
+    }
+
+    if (isStrictlyLoading) {
+        return null;
     }
 
     if (!classId || !studentId || !selectedClass || !selectedStudent) {
@@ -76,6 +86,8 @@ export default function StudentDetailPage() {
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 classId={classId}
+                classes={classes}
+                role={teacher ? 'teacher' : student ? 'student' : undefined}
             />
 
             <main className="mx-auto max-w-7xl px-4 pb-12 pt-28 sm:px-6 lg:px-8">

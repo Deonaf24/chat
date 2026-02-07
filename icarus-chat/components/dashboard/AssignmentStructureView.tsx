@@ -47,8 +47,12 @@ export function AssignmentStructureView({ assignmentId }: AssignmentStructureVie
     const [structure, setStructure] = useState<AssignmentStructureReviewRead | null>(null);
     const [editMode, setEditMode] = useState(false);
 
+    interface EditableConcept extends ConceptPayload {
+        tempId?: number;
+    }
+
     // Editable State (mirrors structure)
-    const [concepts, setConcepts] = useState<ConceptPayload[]>([]);
+    const [concepts, setConcepts] = useState<EditableConcept[]>([]);
     const [questions, setQuestions] = useState<AssignmentQuestionPayload[]>([]);
 
     useEffect(() => {
@@ -311,7 +315,7 @@ export function AssignmentStructureView({ assignmentId }: AssignmentStructureVie
                                             {q.concept_ids?.length > 0 && (
                                                 <div className="flex flex-wrap gap-1 pt-1">
                                                     {q.concept_ids.map(cid => {
-                                                        const c = concepts.find(c => c.id === cid || (c as any).tempId === cid); // tempId handling if needed
+                                                        const c = concepts.find(c => c.id === cid || c.tempId === cid); // tempId handling if needed
                                                         return c ? (
                                                             <Badge key={cid} variant="secondary" className="text-[10px] h-5">
                                                                 <Lightbulb className="h-3 w-3 mr-1 opacity-50" />

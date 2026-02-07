@@ -4,6 +4,7 @@ import {
   AssignmentAnalytics,
   ClassAnalytics,
   StudentAnalytics,
+  ChapterAnalytics,
   AssignmentStructureReviewRead,
   AssignmentStructureReview,
   ConceptPayload
@@ -21,6 +22,11 @@ export async function getAssignmentAnalytics(assignmentId: number): Promise<Assi
 
 export async function getClassAnalytics(classId: number): Promise<ClassAnalytics> {
   const response = await apiClient.get<ClassAnalytics>(`/analytics/classes/${classId}`);
+  return response.data;
+}
+
+export async function getChapterAnalytics(classId: number): Promise<ChapterAnalytics[]> {
+  const response = await apiClient.get<ChapterAnalytics[]>(`/analytics/classes/${classId}/chapters`);
   return response.data;
 }
 

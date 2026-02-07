@@ -11,23 +11,28 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useDashboardAuth } from "@/app/hooks/dashboard/useDashboardAuth";
 import { useDashboardData } from "@/app/hooks/dashboard/useDashboardData";
+import { useSmoothLoading } from "@/app/hooks/useSmoothLoading";
 import { authStore } from "@/app/lib/auth/authStore";
 import { JoinClassDialog } from "@/components/dashboard/JoinClassDialog";
+import { CreateClassDialog } from "@/components/dashboard/CreateClassDialog";
 import { SidebarMenu } from "@/components/dashboard/SidebarMenu";
+import { UpcomingEvents } from "@/components/dashboard/UpcomingEvents";
 // useState imported above
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, teacher, student, loading: authLoading } = useDashboardAuth();
-  const { classes, students, assignments, loading, error } = useDashboardData(
+  const { classes, students, assignments, loading, initialized, error } = useDashboardData(
     user,
     teacher,
     student
   );
 
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  const isLoading = authLoading || loading;
+  const isStrictlyLoading = authLoading || loading || (!initialized && !!user);
+  const showLoader = useSmoothLoading(isStrictlyLoading);
 
   const handleLogout = () => {
     authStore.logout();
@@ -45,15 +50,19 @@ export default function DashboardPage() {
     }
   }
 
-  if (isLoading) {
+  if (showLoader) {
     return (
       <div className="grid h-dvh place-items-center">
         <div className="flex items-center gap-3 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Loading your teacher dashboard...</span>
+          <span>Loading your dashboard...</span>
         </div>
       </div>
     );
+  }
+
+  if (isStrictlyLoading) {
+    return null;
   }
 
   return (
@@ -62,7 +71,7 @@ export default function DashboardPage() {
       <div className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
         <div className="relative mx-auto flex h-24 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4 z-10">
-            <SidebarMenu classes={classes} />
+            <SidebarMenu classes={classes} role={teacher ? 'teacher' : student ? 'student' : undefined} />
             <a href="/dashboard" className="flex items-center gap-2 text-xl font-bold">
               Socratica
             </a>
@@ -89,6 +98,22 @@ export default function DashboardPage() {
             <Badge variant="secondary" className="px-3 py-1 text-sm">
               {classes.length} Active Classes
             </Badge>
+            {teacher && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    await import("@/app/lib/api/school").then(m => m.syncGoogleCourses());
+                    window.location.reload();
+                  } catch (e) {
+                    console.error("Sync failed", e);
+                  }
+                }}
+              >
+                Sync Google Classroom
+              </Button>
+            )}
             {student && (
               <Button
                 variant="ghost"
@@ -112,31 +137,61 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {classes.length > 0 ? (
-          <ClassGrid
-            classes={classes}
-            selectedClassId={null}
-            onSelect={handleClassSelect}
-            getStats={getClassStats}
-            showCreate={!student}
-          />
-        ) : (
-          <div className="grid place-items-center h-64 border-2 border-dashed rounded-xl">
-            <div className="flex flex-col items-center gap-2">
-              <p className="text-muted-foreground">You don't have any classes yet.</p>
-              {student && (
-                <Button variant="outline" onClick={() => setJoinDialogOpen(true)}>
-                  Join your first class
-                </Button>
-              )}
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3">
+            {classes.length > 0 ? (
+              <ClassGrid
+                classes={classes}
+                selectedClassId={null}
+                onSelect={handleClassSelect}
+                getStats={getClassStats}
+                showCreate={!student}
+                onCreate={() => setCreateDialogOpen(true)}
+              />
+            ) : (
+              <div className="grid place-items-center h-64 border-2 border-dashed rounded-xl">
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-muted-foreground">You don't have any classes yet.</p>
+                  {student && (
+                    <Button variant="outline" onClick={() => setJoinDialogOpen(true)}>
+                      Join your first class
+                    </Button>
+                  )}
+                  {teacher && (
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          await import("@/app/lib/api/school").then(m => m.syncGoogleCourses());
+                          window.location.reload();
+                        } catch (e) {
+                          console.error("Sync failed", e);
+                        }
+                      }}
+                    >
+                      Sync Google Classroom
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+
+          <div className="lg:col-span-1 min-w-[280px]">
+            <UpcomingEvents classes={classes} assignments={assignments} />
+          </div>
+        </div>
 
         <JoinClassDialog
           open={joinDialogOpen}
           onOpenChange={setJoinDialogOpen}
           onJoinSuccess={() => window.location.reload()} // For now just reload to refresh data
+        />
+
+        <CreateClassDialog
+          open={createDialogOpen}
+          onOpenChange={setCreateDialogOpen}
+          onSuccess={() => window.location.reload()}
         />
       </main>
     </div>

@@ -3,17 +3,18 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AssignmentRead } from "@/app/types/school";
+import { AssignmentRead, FileRead } from "@/app/types/school";
 import { format } from "date-fns";
 import { Paperclip, Settings } from "lucide-react";
 import { EditAssignmentDialog } from "./EditAssignmentDialog";
 
 interface AssignmentDetailsViewProps {
     assignment: AssignmentRead;
+    files: FileRead[];
     onUpdate?: () => void;
 }
 
-export function AssignmentDetailsView({ assignment, onUpdate }: AssignmentDetailsViewProps) {
+export function AssignmentDetailsView({ assignment, files, onUpdate }: AssignmentDetailsViewProps) {
     const [isEditOpen, setIsEditOpen] = useState(false);
 
     return (
@@ -44,20 +45,21 @@ export function AssignmentDetailsView({ assignment, onUpdate }: AssignmentDetail
                         <div className="space-y-3 pt-4 border-t">
                             <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Attachments</h4>
                             <div className="grid gap-2 sm:grid-cols-2">
-                                {assignment.file_ids.map((fileId) => (
-                                    <div key={fileId} className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
+                                {files.map((file) => (
+                                    <div key={file.id} className="flex items-center gap-3 p-3 border rounded-md bg-muted/30">
                                         <div className="h-8 w-8 rounded bg-background flex items-center justify-center border shadow-sm">
                                             <Paperclip className="h-4 w-4 text-muted-foreground" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium">Attachment {fileId}</p>
-                                            <p className="text-xs text-muted-foreground">File ID: {fileId}</p>
+                                            <p className="text-sm font-medium">{file.filename}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
+
+
                 </CardContent>
             </Card>
 

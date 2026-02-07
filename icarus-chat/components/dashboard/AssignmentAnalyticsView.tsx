@@ -8,6 +8,9 @@ import { getAssignmentAnalytics } from "@/app/lib/api/analytics";
 import { AssignmentAnalytics } from "@/app/types/analytics";
 import { ScoreDistributionChart } from "@/components/dashboard/charts/ScoreDistributionChart";
 import { WeaknessChart } from "@/components/dashboard/charts/WeaknessChart";
+import { useSmoothLoading } from "@/app/hooks/useSmoothLoading";
+import { getGrade } from "@/lib/grading";
+import { AnalyticsEmptyState } from "@/components/dashboard/analytics/AnalyticsEmptyState";
 
 interface AssignmentAnalyticsViewProps {
     assignmentId: number;
@@ -43,7 +46,9 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
         };
     }, [assignmentId]);
 
-    if (loading) {
+    const showLoader = useSmoothLoading(loading);
+
+    if (showLoader) {
         return (
             <div className="grid h-64 place-items-center">
                 <div className="flex items-center gap-3 text-muted-foreground">
@@ -54,21 +59,38 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
         );
     }
 
-    if (error || !analytics) {
+    if (loading) {
+        return null;
+    }
+
+    if (error) {
         return (
             <div className="grid h-64 place-items-center px-6">
                 <div className="max-w-md space-y-3 text-center">
                     <p className="text-lg font-semibold">Unable to display analytics</p>
-                    <p className="text-sm text-muted-foreground">{error ?? "Analytics data not available."}</p>
+                    <p className="text-sm text-muted-foreground">{error}</p>
                 </div>
             </div>
         );
     }
 
+    // Detect empty state: no analytics data OR no student rankings (no submissions yet)
+    const hasNoData = !analytics || analytics.student_rankings.length === 0;
+
+    if (hasNoData) {
+        return (
+            <AnalyticsEmptyState
+                title="No Submission Data Yet"
+                subtitle="Assignment insights will appear once students start submitting their work and engaging with this assignment."
+            />
+        );
+    }
+
     // Calculate generic average if student rankings exist
-    const averageScore = analytics.student_rankings.length > 0
-        ? Math.round(analytics.student_rankings.reduce((acc, curr) => acc + curr.average_score, 0) / analytics.student_rankings.length * 100)
+    const averageScoreRaw = (analytics?.student_rankings?.length ?? 0) > 0
+        ? analytics!.student_rankings.reduce((acc, curr) => acc + curr.average_score, 0) / analytics!.student_rankings.length
         : 0;
+    const averageGrade = getGrade(averageScoreRaw);
 
     return (
         <div className="space-y-8">
@@ -83,7 +105,7 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                         <CardTitle className="text-sm font-medium text-muted-foreground">Class Average</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{averageScore}%</div>
+                        <div className={`text-3xl font-bold ${averageGrade.colorClass}`}>{averageGrade.grade}</div>
                     </CardContent>
                 </Card>
 
@@ -95,8 +117,8 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                         <div className="text-2xl font-bold truncate" title={analytics.most_understood_concept?.concept_name}>
                             {analytics.most_understood_concept?.concept_name ?? "No data yet"}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {analytics.most_understood_concept ? `Avg Score: ${Math.round(analytics.most_understood_concept.average_score * 100)}%` : "Keep analyzing"}
+                        <p className={`text-xs mt-1 ${analytics.most_understood_concept ? getGrade(analytics.most_understood_concept.average_score).colorClass : "text-muted-foreground"}`}>
+                            {analytics.most_understood_concept ? getGrade(analytics.most_understood_concept.average_score).grade : "Keep analyzing"}
                         </p>
                     </CardContent>
                 </Card>
@@ -109,8 +131,8 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                         <div className="text-xl font-bold truncate" title={analytics.least_understood_concept?.concept_name}>
                             {analytics.least_understood_concept?.concept_name ?? "No data yet"}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {analytics.least_understood_concept ? `Avg Score: ${Math.round(analytics.least_understood_concept.average_score * 100)}%` : "More practice needed"}
+                        <p className={`text-xs mt-1 ${analytics.least_understood_concept ? getGrade(analytics.least_understood_concept.average_score).colorClass : "text-muted-foreground"}`}>
+                            {analytics.least_understood_concept ? getGrade(analytics.least_understood_concept.average_score).grade : "More practice needed"}
                         </p>
                     </CardContent>
                 </Card>
@@ -124,8 +146,8 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                     </CardHeader>
                     <CardContent>
                         <p className="text-base italic">"{analytics.most_understood_question?.question_prompt ?? "N/A"}"</p>
-                        <div className="text-xl font-bold text-green-600 mt-2">
-                            {analytics.most_understood_question ? `${Math.round(analytics.most_understood_question.average_score * 100)}% Correct` : "-"}
+                        <div className={`text-xl font-bold mt-2 ${analytics.most_understood_question ? getGrade(analytics.most_understood_question.average_score).colorClass : "text-green-600"}`}>
+                            {analytics.most_understood_question ? getGrade(analytics.most_understood_question.average_score).grade : "-"}
                         </div>
                     </CardContent>
                 </Card>
@@ -137,8 +159,8 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                     </CardHeader>
                     <CardContent>
                         <p className="text-base italic">"{analytics.least_understood_question?.question_prompt ?? "N/A"}"</p>
-                        <div className="text-xl font-bold text-red-600 mt-2">
-                            {analytics.least_understood_question ? `${Math.round(analytics.least_understood_question.average_score * 100)}% Correct` : "-"}
+                        <div className={`text-xl font-bold mt-2 ${analytics.least_understood_question ? getGrade(analytics.least_understood_question.average_score).colorClass : "text-primary"}`}>
+                            {analytics.least_understood_question ? getGrade(analytics.least_understood_question.average_score).grade : "-"}
                         </div>
                     </CardContent>
                 </Card>
@@ -170,7 +192,7 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                                     <div className="flex justify-between items-start">
                                         <CardTitle className="text-base font-semibold">{group.concept_name}</CardTitle>
                                         <Badge variant="outline" className="text-xs bg-orange-100 text-orange-700 border-orange-200">
-                                            Avg: {Math.round(group.average_score * 100)}%
+                                            {getGrade(group.average_score).grade}
                                         </Badge>
                                     </div>
                                     <CardDescription>
@@ -182,7 +204,7 @@ export function AssignmentAnalyticsView({ assignmentId }: AssignmentAnalyticsVie
                                         {group.students.map((student) => (
                                             <li key={student.student_id} className="flex justify-between items-center">
                                                 <span>{student.student_name}</span>
-                                                <span className="text-muted-foreground text-xs">{Math.round(student.average_score * 100)}%</span>
+                                                <span className={`text-xs ${getGrade(student.average_score).colorClass}`}>{getGrade(student.average_score).grade}</span>
                                             </li>
                                         ))}
                                     </ul>

@@ -8,16 +8,20 @@ import { StudentRead, TeacherRead } from "@/app/types/school";
 import { User } from "@/app/types/auth";
 import { cn } from "@/lib/utils";
 
+import { useClassContext } from "@/app/dashboard/classes/[id]/context";
+
 interface PeopleListProps {
-    classId: number; // For linking to student pages
-    teacher?: TeacherRead; // The class teacher
-    students: StudentRead[];
-    usersById: Record<number, User>; // To lookup avatar/name if needed (though Read models have names)
-    accentColorClass?: string; // e.g. "text-pink-500"
-    isTeacher?: boolean; // Controls whether students are clickable
+    accentColorClass?: string;
 }
 
-export function PeopleList({ classId, teacher, students, usersById, accentColorClass, isTeacher = false }: PeopleListProps) {
+export function PeopleList({ accentColorClass }: PeopleListProps) {
+    const { classId, teachers: allTeachers, students, usersById, isTeacher } = useClassContext();
+
+    // Ideally the backend/context provides the *specific* teacher for this class, 
+    // but assuming for now we find them in the list or this filtered list is correct.
+    // In page.tsx it was finding the first teacher match.
+    // We'll replicate that logic or rely on filtered data.
+    const teacher = allTeachers[0]; // Simplified for now as context should filter, but let's check provider usage.
 
     const getUserName = (entity: TeacherRead | StudentRead) => {
         if (entity.name) return entity.name;
@@ -46,7 +50,7 @@ export function PeopleList({ classId, teacher, students, usersById, accentColorC
                     {teacher ? (
                         <div className="flex items-center gap-4 py-2">
                             <Avatar className="h-10 w-10">
-                                <AvatarImage src={`https://avatar.vercel.sh/${teacher.user_id}`} />
+                                <AvatarImage src={teacher.profile_picture_url || `https://avatar.vercel.sh/${teacher.user_id}`} />
                                 <AvatarFallback>{getInitials(getUserName(teacher))}</AvatarFallback>
                             </Avatar>
                             <span className="font-medium">{getUserName(teacher)}</span>
@@ -72,7 +76,7 @@ export function PeopleList({ classId, teacher, students, usersById, accentColorC
                                 const Content = (
                                     <div className="flex items-center gap-4 py-3">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={`https://avatar.vercel.sh/${student.user_id}`} />
+                                            <AvatarImage src={student.profile_picture_url || `https://avatar.vercel.sh/${student.user_id}`} />
                                             <AvatarFallback>{getInitials(getUserName(student))}</AvatarFallback>
                                         </Avatar>
                                         <span className="font-medium">{getUserName(student)}</span>

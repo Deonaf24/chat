@@ -97,12 +97,19 @@ export function EditAssignmentDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-2">
+
+                    {assignment.google_id && (
+                        <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-md border border-blue-200 dark:border-blue-800 text-sm text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                            <span>Synced from Google Classroom. Some fields are read-only.</span>
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Title</label>
                         <Input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Assignment title"
+                            disabled={!!assignment.google_id}
                         />
                     </div>
                     <div className="space-y-2">
@@ -111,6 +118,7 @@ export function EditAssignmentDialog({
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Description"
+                            disabled={!!assignment.google_id}
                         />
                     </div>
 
@@ -137,6 +145,7 @@ export function EditAssignmentDialog({
                                 type="date"
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
+                                disabled={!!assignment.google_id}
                             />
                         </div>
                     </div>

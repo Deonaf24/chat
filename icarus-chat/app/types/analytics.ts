@@ -56,6 +56,8 @@ export interface StudentScoreSummary {
   student_id: number;
   student_name: string;
   average_score: number;
+  best_concept?: string;
+  worst_concept?: string;
 }
 
 export interface ClassAnalytics {
@@ -64,6 +66,8 @@ export interface ClassAnalytics {
   least_understood_assignment: AssignmentScoreSummary | null;
   student_rankings: StudentScoreSummary[];
   weakness_groups: WeaknessGroup[];
+  class_status?: string | null;
+  class_status_color?: string | null;
 }
 
 export interface ConceptPayload {
@@ -96,6 +100,20 @@ export interface AssignmentStructureReview {
   assignment_concepts: AssignmentConceptLink[];
 }
 
+
 export interface AssignmentStructureReviewRead extends AssignmentStructureReview {
   structure_approved: boolean;
+}
+
+export interface ConceptScoreNode {
+  concept_id: number;
+  concept_name: string;
+  understanding_score: number;
+}
+
+export interface ChapterAnalytics {
+  chapter_id: number;
+  chapter_title: string;
+  understanding_score: number;
+  concepts: ConceptScoreNode[];
 }

@@ -4,6 +4,7 @@ export interface PromptRequest {
     subject: string,
     user_message: string,
     history: string,
+    class_id?: string,
 }
 
 export interface GenerateResponse { answer: string }

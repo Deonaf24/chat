@@ -19,8 +19,14 @@ interface StudentAssignmentViewProps {
 export function StudentAssignmentView({ assignment, files }: StudentAssignmentViewProps) {
     const [submissionFile, setSubmissionFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false); // Mock status
-    const [submittedDate, setSubmittedDate] = useState<Date | null>(null);
+
+    // Derive status from prop
+    const submission = assignment.submission;
+    const isSubmitted = submission?.status === "TURNED_IN" || submission?.status === "RETURNED";
+    const grade = submission?.grade;
+
+    // Mock date for now if not in payload (we didn't add timestamp to StudentAssignment model yet)
+    const [submittedDate, setSubmittedDate] = useState<Date | null>(isSubmitted ? new Date() : null);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -85,7 +91,7 @@ export function StudentAssignmentView({ assignment, files }: StudentAssignmentVi
                                     {files.map((file) => (
                                         <a
                                             key={file.id}
-                                            href={`/api/files/${file.id}`} // Using direct path or use fetched preview URL if stored in file object
+                                            href={file.url || `${process.env.NEXT_PUBLIC_API_URL}/school/files/${file.id}/download`}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
@@ -134,8 +140,13 @@ export function StudentAssignmentView({ assignment, files }: StudentAssignmentVi
                                             {submissionFile?.name || "submission.pdf"}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
-                                            Submitted {submittedDate ? format(submittedDate, "MMM d, h:mm a") : "Just now"}
+                                            Submitted {submittedDate ? format(submittedDate, "MMM d, h:mm a") : "previously"}
                                         </p>
+                                        {grade !== undefined && grade !== null && (
+                                            <p className="text-sm font-medium text-primary mt-1">
+                                                Grade: {grade}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>

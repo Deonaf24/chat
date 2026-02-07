@@ -14,9 +14,10 @@ interface ClassGridProps {
     // For now, we'll pass arrays or lookup functions.
     getStats: (classId: number) => { studentCount: number; assignmentCount: number };
     showCreate?: boolean;
+    onCreate?: () => void;
 }
 
-export function ClassGrid({ classes, onSelect, getStats, showCreate = true }: ClassGridProps) {
+export function ClassGrid({ classes, onSelect, getStats, showCreate = true, onCreate }: ClassGridProps) {
     return (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {classes.map((classItem, index) => {
@@ -38,7 +39,10 @@ export function ClassGrid({ classes, onSelect, getStats, showCreate = true }: Cl
 
             {/* "Add Class" Placeholder Card */}
             {showCreate && (
-                <Card className="flex h-[200px] flex-col items-center justify-center gap-4 border-dashed bg-muted/30 text-muted-foreground transition-colors hover:bg-muted/50 cursor-not-allowed opacity-60">
+                <Card
+                    className="flex h-[180px] flex-col items-center justify-center gap-4 border-dashed bg-muted/30 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground cursor-pointer"
+                    onClick={() => onCreate?.()}
+                >
                     <div className="rounded-full bg-background p-3 shadow-sm">
                         <Plus className="h-6 w-6" />
                     </div>

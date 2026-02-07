@@ -21,37 +21,29 @@ export function TeacherClassCard({ classItem, studentCount, assignmentCount, onC
         <Card
             className={cn(
                 "group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer border-none",
-                "flex flex-col h-[200px]"
+                "flex flex-col h-[180px] py-0 gap-0"
             )}
             onClick={onClick}
         >
             {/* Decorative Gradient Background */}
-            <div className={cn("absolute inset-0 opacity-10 group-hover:opacity-15 transition-opacity bg-gradient-to-br", theme.gradient)} />
+            <div className={cn("absolute inset-0 bg-gradient-to-br", theme.overlay)} />
 
+            <CardHeader className="pb-2 z-10 pt-6 px-6">
+                <div className="flex justify-between items-start gap-2">
+                    <CardTitle className="text-xl font-bold tracking-tight text-white line-clamp-2 leading-tight">{classItem.name}</CardTitle>
+                    <div className="flex gap-1 items-center">
 
-
-            <CardHeader className="pb-2 z-10">
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl font-bold tracking-tight">{classItem.name}</CardTitle>
-                    <Badge variant="outline" className="bg-background/50 backdrop-blur-sm">
-                        Active
-                    </Badge>
+                        <Badge variant="outline" className="bg-white/20 text-white border-white/20 backdrop-blur-sm shrink-0">
+                            Active
+                        </Badge>
+                    </div>
                 </div>
-                <CardDescription className="line-clamp-2">
-                    {classItem.description || "No description provided."}
-                </CardDescription>
             </CardHeader>
 
-            <CardContent className="z-10 mt-auto pb-4">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                        <Users className="h-4 w-4" />
-                        <span>{studentCount} Students</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{assignmentCount} Assignments</span>
-                    </div>
+            <CardContent className="z-10 mt-auto pb-6 px-6">
+                <div className="flex items-center gap-1.5 text-sm text-white/90 font-medium">
+                    <Users className="h-4 w-4 text-white/80" />
+                    <span>{studentCount} Students</span>
                 </div>
             </CardContent>
         </Card>

@@ -10,8 +10,10 @@ export interface TokenData {
 
 export interface User {
     id?: number;
-    username: string;
-    email?: string | null;
+    username?: string | null;
+    email: string;
+    first_name?: string | null;
+    last_name?: string | null;
     full_name?: string | null;
     disabled?: boolean | null;
     is_teacher?: boolean;
@@ -22,8 +24,10 @@ export interface UserInDB {
 }
 
 export interface UserCreate {
-    username: string,
+    username?: string,
     email: string,
+    first_name: string,
+    last_name: string,
     password: string,
     password_confirm: string,
     is_teacher: boolean,

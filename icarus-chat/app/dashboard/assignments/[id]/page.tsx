@@ -16,6 +16,7 @@ import {
   getFile,
   getFilePreviewUrl,
   updateAssignmentStructure,
+  getAssignmentStructure,
 } from "@/app/lib/api/school";
 import { AssignmentRead, FileRead } from "@/app/types/school";
 
@@ -47,13 +48,21 @@ export default function AssignmentDetailPage() {
 
     (async () => {
       try {
-        const assignmentRecord = await getAssignment(assignmentId);
+        const [assignmentRecord, structureRecord] = await Promise.all([
+          getAssignment(assignmentId),
+          getAssignmentStructure(String(assignmentId)).catch(() => null)
+        ]);
+
         const relatedFiles = assignmentRecord.file_ids?.length
           ? await Promise.all(assignmentRecord.file_ids.map((fileId) => getFile(fileId)))
           : [];
+
         if (!isMounted) return;
         setAssignment(assignmentRecord);
         setFiles(relatedFiles);
+        if (structureRecord) {
+          setStructure(structureRecord);
+        }
       } catch (err) {
         if (!isMounted) return;
         setError("Unable to load this assignment right now.");

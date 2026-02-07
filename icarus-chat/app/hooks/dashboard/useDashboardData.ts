@@ -14,6 +14,7 @@ interface UseDashboardDataResult {
   assignments: AssignmentRead[];
   usersById: Record<number, User>;
   loading: boolean;
+  initialized: boolean;
   error: string | null;
   refresh: () => Promise<void>;
   addAssignment: (assignment: AssignmentRead) => void;
@@ -32,11 +33,18 @@ export function useDashboardData(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [initialized, setInitialized] = useState(false);
+
   const teacherIdentifier = useMemo(() => teacher?.id ?? user?.id ?? null, [teacher, user]);
   const studentIdentifier = useMemo(() => student?.id ?? null, [student]);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
+
+    // Guard: If user is teacher/student but profile not loaded yet, wait.
+    if (user.is_teacher && !teacher) return;
+    if (!user.is_teacher && !student) return;
+
     setLoading(true);
     setError(null);
 
@@ -84,6 +92,7 @@ export function useDashboardData(
       console.error(fetchError);
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
   }, [teacher, student, teacherIdentifier, studentIdentifier, user]);
 
@@ -96,5 +105,5 @@ export function useDashboardData(
     setAssignments((previous) => [assignment, ...previous]);
   }, []);
 
-  return { classes, students, teachers: teachersList, assignments, usersById, loading, error, refresh: fetchData, addAssignment };
+  return { classes, students, teachers: teachersList, assignments, usersById, loading, initialized, error, refresh: fetchData, addAssignment };
 }

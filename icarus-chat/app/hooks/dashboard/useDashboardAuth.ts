@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { listTeachers, listStudents } from "@/app/lib/api/school";
@@ -15,6 +15,7 @@ interface UseDashboardAuthResult {
   loading: boolean;
   isTeacher: boolean;
   isStudent: boolean;
+  refreshAuth: () => Promise<void>;
 }
 
 export function useDashboardAuth(): UseDashboardAuthResult {
@@ -24,50 +25,56 @@ export function useDashboardAuth(): UseDashboardAuthResult {
   const [student, setStudent] = useState<StudentRead | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let isActive = true;
+  const hydrateAuth = useCallback(async () => {
+    try {
+      const currentUser = await authStore.hydrate();
 
-    const hydrateAuth = async () => {
-      try {
-        const currentUser = await authStore.hydrate();
-
-        if (!isActive) return;
-
-        if (!currentUser) {
-          router.replace("/");
-          return;
-        }
-
-        setUser(currentUser);
-
-        if (currentUser.is_teacher) {
-          const teacherList = await listTeachers();
-          if (!isActive) return;
-          const teacherRecord = teacherList.find((entry) => entry.user_id === currentUser.id) ?? null;
-          setTeacher(teacherRecord);
-        } else {
-          const studentList = await listStudents();
-          if (!isActive) return;
-          const studentRecord = studentList.find((entry) => entry.user_id === currentUser.id) ?? null;
-          setStudent(studentRecord);
-        }
-
-      } catch (error) {
-        if (!isActive) return;
+      if (!currentUser) {
         router.replace("/");
-      } finally {
-        if (isActive) {
-          setLoading(false);
-        }
+        return;
       }
-    };
 
-    hydrateAuth();
+      setUser(currentUser);
 
-    return () => {
-      isActive = false;
-    };
+      if (currentUser.is_teacher) {
+        const teacherList = await listTeachers();
+        const teacherRecord = teacherList.find((entry) => entry.user_id === currentUser.id) ?? null;
+        setTeacher(teacherRecord);
+      } else {
+        const studentList = await listStudents();
+        const studentRecord = studentList.find((entry) => entry.user_id === currentUser.id) ?? null;
+        setStudent(studentRecord);
+      }
+
+    } catch (error) {
+      router.replace("/");
+    } finally {
+      setLoading(false);
+    }
   }, [router]);
+
+  useEffect(() => {
+    hydrateAuth();
+  }, [hydrateAuth]);
+
+  const refreshAuth = useCallback(async () => {
+    // Re-fetch the teacher/student profile from the API
+    if (!user) return;
+
+    try {
+      if (user.is_teacher) {
+        const teacherList = await listTeachers();
+        const teacherRecord = teacherList.find((entry) => entry.user_id === user.id) ?? null;
+        setTeacher(teacherRecord);
+      } else {
+        const studentList = await listStudents();
+        const studentRecord = studentList.find((entry) => entry.user_id === user.id) ?? null;
+        setStudent(studentRecord);
+      }
+    } catch (error) {
+      console.error("Failed to refresh auth data", error);
+    }
+  }, [user]);
 
   return {
     user,
@@ -75,6 +82,8 @@ export function useDashboardAuth(): UseDashboardAuthResult {
     student,
     loading,
     isTeacher: !!teacher || (user?.is_teacher ?? false),
-    isStudent: !!student || (!user?.is_teacher && !!user)
+    isStudent: !!student || (!user?.is_teacher && !!user),
+    refreshAuth
   };
 }
+

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, getWeeksInMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, getWeeksInMonth, addWeeks, subWeeks, addDays } from "date-fns";
 import { ChevronLeft, ChevronRight, Loader2, Calendar as CalendarIcon, BookOpen } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,32 +15,71 @@ import Link from "next/link";
 import { SidebarMenu } from "@/components/dashboard/SidebarMenu";
 import { useRouter } from "next/navigation";
 import { authStore } from "@/app/lib/auth/authStore";
+import { useDashboardAuth } from "@/app/hooks/dashboard/useDashboardAuth";
+import { useDashboardData } from "@/app/hooks/dashboard/useDashboardData";
+import { useSmoothLoading } from "@/app/hooks/useSmoothLoading";
+import { listCalendarEvents, listTeacherCalendarEvents, CalendarEvent, deleteCalendarEvent } from "@/app/lib/api/calendar";
+import { toast } from "sonner";
+import { MonthView } from "@/components/dashboard/calendar/MonthView";
+import { WeekView } from "@/components/dashboard/calendar/WeekView";
+import { DayView } from "@/components/dashboard/calendar/DayView";
+import { EventDetailsDialog } from "@/components/dashboard/calendar/EventDetailsDialog";
+import { AssignmentDetailsDialog } from "@/components/dashboard/calendar/AssignmentDetailsDialog";
 
 export default function CalendarPage() {
     const router = useRouter();
+    const { user, teacher, student, loading: authLoading } = useDashboardAuth();
+    const { classes, assignments, loading: dataLoading, initialized } = useDashboardData(user, teacher, student);
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [assignments, setAssignments] = useState<AssignmentRead[]>([]);
-    const [classes, setClasses] = useState<ClassRead[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [view, setView] = useState<"month" | "week" | "day">("month");
+    const [slideDirection, setSlideDirection] = useState(0);
+    const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
+    const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+    // Assignment Dialog State
+    const [selectedAssignment, setSelectedAssignment] = useState<AssignmentRead | null>(null);
+    const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+
+    const handleEventClick = (event: CalendarEvent) => {
+        setSelectedEvent(event);
+        setIsDialogOpen(true);
+    };
+
+    const handleAssignmentClick = (assignment: AssignmentRead) => {
+        setSelectedAssignment(assignment);
+        setIsAssignmentDialogOpen(true);
+    };
+
+    const handleDeleteEvent = async (eventId: number) => {
+        if (!student?.id) return;
+        try {
+            await deleteCalendarEvent(student.id, eventId);
+            setCalendarEvents((prev) => prev.filter((e) => e.id !== eventId));
+            setIsDialogOpen(false);
+            toast.success("Event deleted successfully");
+        } catch (error) {
+            console.error("Failed to delete event", error);
+            toast.error("Failed to delete event");
+            throw error;
+        }
+    };
+
+    const isStrictlyLoading = authLoading || dataLoading || (!initialized && !!user);
+    const showLoader = useSmoothLoading(isStrictlyLoading);
+
+    // Fetch calendar events
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const [classesData, assignmentsData] = await Promise.all([
-                    listClasses(),
-                    listAssignments()
-                ]);
-                setClasses(classesData);
-                setAssignments(assignmentsData);
-            } catch (error) {
-                console.error("Failed to fetch calendar data", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
+        if (student?.id) {
+            listCalendarEvents(student.id)
+                .then(setCalendarEvents)
+                .catch(console.error);
+        } else if (teacher?.id) {
+            listTeacherCalendarEvents(teacher.id)
+                .then(setCalendarEvents)
+                .catch(console.error);
+        }
+    }, [student?.id, teacher?.id]);
 
     const handleLogout = () => {
         authStore.logout();
@@ -56,35 +96,33 @@ export default function CalendarPage() {
         return classes.find(c => c.id === classId)?.name || "Unknown Class";
     };
 
-    const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-    const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+    // Navigation Logic
+    const next = () => {
+        setSlideDirection(1);
+        if (view === "month") setCurrentDate(addMonths(currentDate, 1));
+        else if (view === "week") setCurrentDate(addWeeks(currentDate, 1));
+        else setCurrentDate(addDays(currentDate, 1));
+    };
+
+    const prev = () => {
+        setSlideDirection(-1);
+        if (view === "month") setCurrentDate(subMonths(currentDate, 1));
+        else if (view === "week") setCurrentDate(subWeeks(currentDate, 1));
+        else setCurrentDate(addDays(currentDate, -1));
+    };
+
     const resetToToday = () => setCurrentDate(new Date());
 
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
-
-    const calendarDays = eachDayOfInterval({
-        start: startDate,
-        end: endDate,
-    });
-
-    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-    // Calculate precise grid rows logic
-    // Usually 5 or 6 weeks. We want to fill the space.
-    // We'll use CSS grid with 1fr for rows.
-
-    if (loading) {
+    if (showLoader) {
         return (
             <div className="grid h-dvh place-items-center">
-                <div className="flex items-center gap-3 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Loading calendar...</span>
-                </div>
+                <Loader2 className="h-5 w-5 animate-spin" />
             </div>
         );
+    }
+
+    if (isStrictlyLoading) {
+        return null;
     }
 
     return (
@@ -93,25 +131,64 @@ export default function CalendarPage() {
             <div className="flex-none sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
                 <div className="relative mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-4 z-10">
-                        <SidebarMenu classes={classes} />
+                        <SidebarMenu classes={classes} role={teacher ? 'teacher' : student ? 'student' : undefined} />
                         <Link href="/dashboard" className="flex items-center gap-2 text-xl font-bold">
                             Socratica
                         </Link>
                     </div>
 
                     <div className="flex items-center gap-2 z-10 ml-auto bg-transparent">
+                        {/* View Switcher */}
+                        <div className="flex items-center gap-1 bg-background border rounded-md p-1 mr-4 shadow-sm">
+                            <Button
+                                variant={view === "month" ? "secondary" : "ghost"}
+                                size="sm"
+                                onClick={() => setView("month")}
+                                className="h-7 px-2 text-xs"
+                            >
+                                Month
+                            </Button>
+                            <Button
+                                variant={view === "week" ? "secondary" : "ghost"}
+                                size="sm"
+                                onClick={() => setView("week")}
+                                className="h-7 px-2 text-xs"
+                            >
+                                Week
+                            </Button>
+                            <Button
+                                variant={view === "day" ? "secondary" : "ghost"}
+                                size="sm"
+                                onClick={() => setView("day")}
+                                className="h-7 px-2 text-xs"
+                            >
+                                Day
+                            </Button>
+                        </div>
+
                         <div className="flex items-center gap-1 border rounded-md bg-background shadow-sm mr-2">
-                            <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8 rounded-none rounded-l-md border-r">
+                            <Button variant="ghost" size="icon" onClick={prev} className="h-8 w-8 rounded-none rounded-l-md border-r">
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <div className="px-3 text-sm font-semibold min-w-[120px] text-center select-none">
-                                {format(currentDate, "MMMM yyyy")}
+                            <div className="px-3 text-sm font-semibold min-w-[140px] text-center select-none">
+                                {view === "month" && format(currentDate, "MMMM yyyy")}
+                                {view === "day" && format(currentDate, "MMMM d, yyyy")}
+                                {view === "week" && `${format(startOfWeek(currentDate), "MMM d")} - ${format(endOfWeek(currentDate), "MMM d")}`}
                             </div>
-                            <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8 rounded-none rounded-r-md border-l">
+                            <Button variant="ghost" size="icon" onClick={next} className="h-8 w-8 rounded-none rounded-r-md border-l">
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={resetToToday}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={resetToToday}
+                            className={cn(
+                                view === "day" && isSameDay(currentDate, new Date())
+                                    ? "bg-red-600 text-white hover:bg-red-700"
+                                    : ""
+                            )}
+                        >
                             Today
                         </Button>
                         <div className="w-px h-6 bg-border mx-2" />
@@ -120,89 +197,80 @@ export default function CalendarPage() {
                 </div>
             </div>
 
-            {/* Main Content - No scroll on main container, only internal if needed, but goal is fit-to-screen */}
+            {/* Main Content */}
             <main className="flex-1 flex flex-col p-4 w-full h-full overflow-hidden max-w-7xl mx-auto">
-                <Card className="flex-1 flex flex-col shadow-sm overflow-hidden border-border/60">
-                    {/* Weekday Header */}
-                    <div className="flex-none grid grid-cols-7 border-b bg-muted/40">
-                        {weekDays.map((day) => (
-                            <div key={day} className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider border-r last:border-r-0">
-                                {day}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Calendar Grid - uses flex-1 to fill remaining space and grid keys to distribute space */}
-                    <div className="flex-1 grid grid-cols-7 auto-rows-[1fr] overflow-hidden">
-                        {calendarDays.map((day, dayIdx) => {
-                            const isToday = isSameDay(day, new Date());
-                            const isCurrentMonth = isSameMonth(day, monthStart);
-
-                            // Filter assignments for this day
-                            const dayAssignments = assignments.filter((a) => {
-                                if (!a.due_at) return false;
-                                return isSameDay(parseISO(a.due_at.toString()), day);
-                            });
-
-                            return (
-                                <div
-                                    key={day.toString()}
-                                    className={cn(
-                                        "min-h-0 border-b border-r p-1.5 transition-colors hover:bg-muted/5 flex flex-col gap-1 relative group overflow-hidden",
-                                        !isCurrentMonth && "bg-muted/5 text-muted-foreground/30",
-                                        isToday && "bg-primary/5",
-                                        // Right border logic could be handled by grid proper, but standard border-r works if container chops overflow
-                                        (dayIdx + 1) % 7 === 0 && "border-r-0"
-                                    )}
-                                >
-                                    <div className="flex-none flex items-center justify-between">
-                                        <span
-                                            className={cn(
-                                                "text-xs font-semibold h-6 w-6 flex items-center justify-center rounded-full",
-                                                isToday
-                                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                                    : "text-muted-foreground"
-                                            )}
-                                        >
-                                            {format(day, "d")}
-                                        </span>
-                                    </div>
-
-                                    {/* Assignments Container - scrollable only if absolutely necessary but ideally text truncates */}
-                                    <div className="flex-1 flex flex-col gap-1 min-h-0 overflow-y-auto custom-scrollbar">
-                                        {dayAssignments.map((assignment) => {
-                                            const style = getClassColor(assignment.class_id);
-                                            return (
-                                                <Link
-                                                    key={assignment.id}
-                                                    href={`/dashboard/classes/${assignment.class_id}/assignments/${assignment.id}`}
-                                                    className="block shrink-0"
-                                                >
-                                                    <div
-                                                        className={cn(
-                                                            "text-[10px] px-1.5 py-0.5 rounded-sm border-l-2 truncate font-medium transition-all hover:brightness-95 hover:scale-[1.01]",
-                                                            "bg-background shadow-sm border border-l-4",
-                                                            style.border
-                                                        )}
-                                                    >
-                                                        <div className="flex justify-between items-baseline gap-1">
-                                                            <span className={cn("text-[8px] uppercase tracking-tighter opacity-80", style.text)}>
-                                                                {getClassName(assignment.class_id)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="truncate text-foreground leading-tight">
-                                                            {assignment.title}
-                                                        </div>
-                                                    </div>
-                                                </Link>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                <Card className="flex-1 flex flex-col shadow-sm overflow-hidden border-border/60 p-0 gap-0 relative">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={view}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex-1 flex flex-col h-full w-full overflow-hidden"
+                        >
+                            {view === "month" && (
+                                <MonthView
+                                    currentDate={currentDate}
+                                    assignments={assignments}
+                                    calendarEvents={calendarEvents}
+                                    classes={classes}
+                                    getClassColor={getClassColor}
+                                    getClassName={getClassName}
+                                    onEventClick={handleEventClick}
+                                    onAssignmentClick={handleAssignmentClick}
+                                    onDateChange={setCurrentDate}
+                                    slideDirection={slideDirection}
+                                    onDirectionChange={setSlideDirection}
+                                />
+                            )}
+                            {view === "week" && (
+                                <WeekView
+                                    currentDate={currentDate}
+                                    assignments={assignments}
+                                    calendarEvents={calendarEvents}
+                                    classes={classes}
+                                    getClassColor={getClassColor}
+                                    getClassName={getClassName}
+                                    onEventClick={handleEventClick}
+                                    onAssignmentClick={handleAssignmentClick}
+                                    onDateChange={setCurrentDate}
+                                    slideDirection={slideDirection}
+                                    onDirectionChange={setSlideDirection}
+                                />
+                            )}
+                            {view === "day" && (
+                                <DayView
+                                    currentDate={currentDate}
+                                    assignments={assignments}
+                                    calendarEvents={calendarEvents}
+                                    classes={classes}
+                                    getClassColor={getClassColor}
+                                    getClassName={getClassName}
+                                    onEventClick={handleEventClick}
+                                    onAssignmentClick={handleAssignmentClick}
+                                    onDateChange={setCurrentDate}
+                                    slideDirection={slideDirection}
+                                    onDirectionChange={setSlideDirection}
+                                />
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
                 </Card>
+                <EventDetailsDialog
+                    event={selectedEvent}
+                    isOpen={isDialogOpen}
+                    onClose={() => setIsDialogOpen(false)}
+                    onDelete={handleDeleteEvent}
+                    getClassName={getClassName}
+                />
+                <AssignmentDetailsDialog
+                    assignment={selectedAssignment}
+                    isOpen={isAssignmentDialogOpen}
+                    onClose={() => setIsAssignmentDialogOpen(false)}
+                    getClassColor={getClassColor}
+                    getClassName={getClassName}
+                />
             </main>
         </div>
     );

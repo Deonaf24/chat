@@ -16,6 +16,7 @@ export interface TeacherRead extends TeacherBase, TimestampModel {
     user_id: number;
     name?: string;
     email?: string;
+    profile_picture_url?: string;
     class_ids: number[]; // List[int] maps to number[]
     assignment_ids: number[];
 }
@@ -33,6 +34,7 @@ export interface StudentRead extends StudentBase, TimestampModel {
     user_id: number;
     name?: string;
     email?: string;
+    profile_picture_url?: string;
     class_ids: number[];
 }
 
@@ -43,8 +45,23 @@ export interface ClassBase {
     join_code: string;
 }
 
+export interface LectureBase {
+    day_of_week: number;
+    start_time: string; // HH:MM
+    duration_minutes: number;
+}
+
+export interface LectureCreate extends LectureBase { }
+
+export interface LectureRead extends LectureBase {
+    id: number;
+    class_id: number;
+}
+
 export interface ClassCreate extends ClassBase {
-    // Currently empty
+    start_date?: string;
+    end_date?: string;
+    lectures?: LectureCreate[];
 }
 
 export interface ClassRead extends ClassBase, TimestampModel {
@@ -52,6 +69,11 @@ export interface ClassRead extends ClassBase, TimestampModel {
     join_code: string;
     student_ids: number[];
     assignment_ids: number[];
+    start_date?: string;
+    end_date?: string;
+    lectures?: LectureRead[];
+    google_id?: string | null;
+    is_google_synced?: boolean;
 }
 
 export type Class = ClassRead;
@@ -69,19 +91,53 @@ export interface AssignmentCreate extends AssignmentBase {
     // Currently empty
 }
 
+export interface StudentAssignmentInfo {
+    student_id: number;
+    status: string | null;
+    grade: number | null;
+    google_submission_id: string | null;
+}
+
 export interface AssignmentRead extends AssignmentBase, TimestampModel {
-    id: string;
+    id: number;
     file_ids: number[];
+    google_id?: string | null;
+    google_link?: string | null;
+    submission?: StudentAssignmentInfo | null;
+    all_submissions?: StudentAssignmentInfo[];
+    concepts?: Concept[];
+    difficulty?: string;
 }
 
 export interface FileBase {
     filename: string;
     path: string;
-    assignment_id: number;
+    url?: string | null;
+    mime_type?: string | null;
+    size?: number;
+    assignment_id?: number | null;
+    material_id?: number | null;
 }
 
 export interface FileCreate extends FileBase {
     // Currently empty
+}
+
+export interface FileRead extends FileBase, TimestampModel {
+    id: number;
+}
+
+export interface ChapterRead {
+    id: number;
+    title: string;
+    description?: string | null;
+    class_id: number;
+    order: number;
+    created_at: string;
+    updated_at: string;
+    concept_ids: number[];
+    assignment_ids: number[];
+    material_ids: number[];
 }
 
 export interface Material {

@@ -1,46 +1,103 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Radio, Zap, CheckCircle2, Circle, Play, StopCircle } from "lucide-react";
-import { getClassConcepts } from "@/app/lib/api/analytics";
-import { ConceptPayload } from "@/app/types/analytics";
+import { Loader2, Zap, CheckCircle2, Circle, ArrowLeft, CheckCircle, XCircle, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { generateLiveQuestions } from "@/app/lib/api/school";
+import { format } from "date-fns";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+
+import { getClassConcepts } from "@/app/lib/api/analytics";
+import { getChapters, generateLiveQuestions } from "@/app/lib/api/school";
+import { getSessionHistory, getDetailedSessionStats } from "@/app/lib/api/live";
+import { ConceptPayload } from "@/app/types/analytics";
+import { ChapterRead } from "@/app/types/school";
+import { LiveSessionSummary, LiveDetailedStats } from "@/app/types/live";
+
+import { useSmoothLoading } from "@/app/hooks/useSmoothLoading";
+import { useLiveSession } from "@/hooks/useLiveSession";
+
+import { StudentLiveSessionView } from "./StudentLiveSessionView";
+import { TeacherLiveSessionView } from "./TeacherLiveSessionView";
+import { LiveSessionConfig } from "./live/LiveSessionConfig";
+import { PastSessionsList } from "./live/PastSessionsList";
 
 interface LiveEventViewProps {
     classId: number;
     isTeacher: boolean;
+    studentId?: number;
 }
 
-export function LiveEventView({ classId, isTeacher }: LiveEventViewProps) {
+export function LiveEventView({ classId, isTeacher, studentId }: LiveEventViewProps) {
     const [loading, setLoading] = useState(true);
     const [concepts, setConcepts] = useState<ConceptPayload[]>([]);
+    const [chapters, setChapters] = useState<ChapterRead[]>([]);
+    const [selectedChapterId, setSelectedChapterId] = useState<string>("all");
     const [selectedConceptIds, setSelectedConceptIds] = useState<number[]>([]);
-    const [isSessionActive, setIsSessionActive] = useState(false);
+
+    // Core Session State
+    const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+    const { session, refreshSession } = useLiveSession(activeSessionId, isTeacher ? 'teacher' : 'student', studentId);
     const [starting, setStarting] = useState(false);
-    const [timeLimit, setTimeLimit] = useState(15);
+
+    // Session history state
+    const [pastSessions, setPastSessions] = useState<LiveSessionSummary[]>([]);
+    const [selectedPastSession, setSelectedPastSession] = useState<LiveDetailedStats | null>(null);
+    const [loadingDetail, setLoadingDetail] = useState(false);
 
     useEffect(() => {
         if (isTeacher) {
-            loadConcepts();
+            loadData();
         } else {
-            setLoading(false); // Students don't need to load concepts yet in this placeholder
+            setLoading(false);
         }
     }, [classId, isTeacher]);
 
-    const loadConcepts = async () => {
+    // Update active session ID if hook detects one (mostly for student polling auto-join)
+    // Actually the hook requires an ID to poll. 
+    // We need a way to discover the active session ID first.
+    // The original code had a separate poller for getActiveSession inside useEffect.
+    // We should probably keep that discovery logic or move it to a useActiveSessionDiscovery hook.
+    // For now, I'll keep the discovery logic here as it's separate from operating a known session.
+    useEffect(() => {
+        // Poll for active session
+        import("@/app/lib/api/live").then(({ getActiveSession }) => {
+            const check = async () => {
+                try {
+                    const sess = await getActiveSession(classId);
+                    if (sess) {
+                        setActiveSessionId(sess.id);
+                    } else if (!isTeacher) {
+                        // Only clear for student, teacher might be in setup mode
+                        setActiveSessionId(null);
+                    }
+                } catch (e) { console.error(e); }
+            };
+
+            check();
+            const interval = setInterval(check, 5000);
+            return () => clearInterval(interval);
+        });
+    }, [classId, isTeacher]);
+
+    const loadData = async () => {
         try {
             setLoading(true);
-            const data = await getClassConcepts(classId);
-            setConcepts(data);
+            const [conceptsData, chaptersData, historyData] = await Promise.all([
+                getClassConcepts(classId),
+                getChapters(classId),
+                getSessionHistory(classId)
+            ]);
+            setConcepts(conceptsData);
+            setChapters(chaptersData);
+            setPastSessions(historyData.filter(s => s.status === "ended"));
         } catch (error) {
-            console.error("Failed to load concepts", error);
-            toast.error("Failed to load class concepts.");
+            console.error("Failed to load data", error);
+            toast.error("Failed to load class data.");
         } finally {
             setLoading(false);
         }
@@ -49,30 +106,15 @@ export function LiveEventView({ classId, isTeacher }: LiveEventViewProps) {
     const toggleConcept = (id?: number) => {
         if (!id) return;
         setSelectedConceptIds(prev =>
-            prev.includes(id)
-                ? prev.filter(cId => cId !== id)
-                : [...prev, id]
+            prev.includes(id) ? prev.filter(cId => cId !== id) : [...prev, id]
         );
     };
 
-    const handleStartSession = async () => {
-        if (selectedConceptIds.length === 0) {
-            toast.error("Please select at least one concept.");
-            return;
-        }
+    const handleStartSession = async (timeLimit: number, questionTypes: string[]) => {
         setStarting(true);
-
         try {
-            // Trigger question generation flow
-            const data = await generateLiveQuestions(classId, selectedConceptIds, timeLimit);
-            console.log("=== LIVE EVENT GENERATION DEBUG ===");
-            console.log("Context Summary:", data.context_summary);
-            console.log("Generated Prompt:", data.generate_prompt);
-            console.log("===================================");
-            toast.success("Generation prompt logged to console (Dev Mode)"); // Temporary feedback
-
-            // Proceed to active session view
-            setIsSessionActive(true);
+            const data = await generateLiveQuestions(classId, selectedConceptIds, timeLimit, questionTypes);
+            setActiveSessionId(data.session.id);
             toast.success(`Live session started! Time limit: ${timeLimit}m`);
         } catch (error) {
             console.error("Failed to generate live event", error);
@@ -82,12 +124,29 @@ export function LiveEventView({ classId, isTeacher }: LiveEventViewProps) {
         }
     };
 
-    const handleEndSession = () => {
-        setIsSessionActive(false);
-        toast.info("Session ended.");
+    const handleViewPastSession = async (sessionId: number) => {
+        setLoadingDetail(true);
+        try {
+            const stats = await getDetailedSessionStats(sessionId);
+            setSelectedPastSession(stats);
+        } catch (error) {
+            console.error("Failed to load session details", error);
+            toast.error("Failed to load session details.");
+        } finally {
+            setLoadingDetail(false);
+        }
     };
 
-    if (loading) {
+    const filteredConcepts = selectedChapterId === "all"
+        ? concepts
+        : concepts.filter(c => {
+            const chapter = chapters.find(ch => ch.id.toString() === selectedChapterId);
+            return chapter?.concept_ids.includes(c.id!);
+        });
+
+    const showLoader = useSmoothLoading(loading);
+
+    if (showLoader) {
         return (
             <div className="h-60 flex items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -95,7 +154,32 @@ export function LiveEventView({ classId, isTeacher }: LiveEventViewProps) {
         );
     }
 
-    // Student View (Placeholder)
+    if (loading) return null;
+
+    // ACTIVE SESSION VIEW
+    if (activeSessionId) {
+        if (isTeacher) {
+            return (
+                <TeacherLiveSessionView
+                    sessionId={activeSessionId}
+                    onEnd={() => {
+                        setActiveSessionId(null);
+                        loadData(); // Refresh history
+                    }}
+                />
+            );
+        } else {
+            return (
+                <StudentLiveSessionView
+                    sessionId={activeSessionId}
+                    studentId={studentId!}
+                    onExit={() => setActiveSessionId(null)}
+                />
+            );
+        }
+    }
+
+    // STUDENT WAITING VIEW
     if (!isTeacher) {
         return (
             <div className="flex flex-col items-center justify-center h-96 space-y-4 text-center p-8 border-2 border-dashed rounded-xl bg-muted/10">
@@ -110,149 +194,182 @@ export function LiveEventView({ classId, isTeacher }: LiveEventViewProps) {
         );
     }
 
-    if (isSessionActive) {
+    // PAST SESSION DETAIL VIEW
+    if (selectedPastSession) {
         return (
-            <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="p-1 rounded-2xl bg-gradient-to-r from-rose-500 to-orange-500">
-                    <Card className="border-0 shadow-lg bg-background">
-                        <CardHeader>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <span className="relative flex h-4 w-4">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500"></span>
-                                    </span>
-                                    <div className="space-y-1">
-                                        <CardTitle className="text-2xl">Live Session in Progress</CardTitle>
-                                        <div className="flex gap-2 text-sm text-muted-foreground">
-                                            <span>Asking questions about {selectedConceptIds.length} concepts.</span>
-                                            <span>•</span>
-                                            <span>Time Limit: {timeLimit} mins</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Button variant="destructive" onClick={handleEndSession}>
-                                    <StopCircle className="mr-2 h-4 w-4" />
-                                    End Session
-                                </Button>
-                            </div>
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedPastSession(null)}>
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Live
+                    </Button>
+                    <div>
+                        <h2 className="text-xl font-bold">Session Analytics</h2>
+                        <p className="text-sm text-muted-foreground">
+                            {format(new Date(selectedPastSession.created_at), "MMM d, yyyy 'at' h:mm a")}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription>Questions</CardDescription>
+                            <CardTitle className="text-2xl">{selectedPastSession.questions.length}</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex flex-wrap gap-2">
-                                {concepts.filter(c => selectedConceptIds.includes(c.id!)).map(c => (
-                                    <Badge key={c.id} variant="secondary" className="px-3 py-1 text-sm">
-                                        {c.name}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <div className="h-64 bg-muted/20 rounded-xl border-2 border-dashed border-muted flex flex-col items-center justify-center text-muted-foreground p-8 text-center space-y-2">
-                                <Zap className="h-10 w-10 text-yellow-500 opacity-50" />
-                                <p>Real-time student responses would appear here.</p>
-                                <p className="text-xs max-w-sm">
-                                    (This is a placeholder for the WebSocket connection that would stream student answers as they come in.)
-                                </p>
-                            </div>
-                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription>Students</CardDescription>
+                            <CardTitle className="text-2xl">{selectedPastSession.student_results.length}</CardTitle>
+                        </CardHeader>
+                    </Card>
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription>Overall Accuracy</CardDescription>
+                            <CardTitle className="text-2xl">{selectedPastSession.overall_accuracy}%</CardTitle>
+                        </CardHeader>
                     </Card>
                 </div>
+
+                {/* Student Results Table */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Student Results</CardTitle>
+                        <CardDescription>Individual performance breakdown</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {selectedPastSession.student_results.length === 0 ? (
+                            <p className="text-muted-foreground text-center py-8">No responses recorded</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {selectedPastSession.student_results.map((student) => (
+                                    <div key={student.student_id} className="border rounded-lg p-4">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Users className="h-4 w-4 text-muted-foreground" />
+                                                <span className="font-medium">Student #{student.student_id}</span>
+                                            </div>
+                                            <Badge variant={student.total_correct === student.total_answered ? "default" : "secondary"}>
+                                                {student.total_correct} / {student.total_answered} correct
+                                            </Badge>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            {student.responses.map((r, idx) => (
+                                                <div key={idx} className="flex items-center gap-3 text-sm p-2 bg-muted/30 rounded">
+                                                    {r.is_correct === true && <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />}
+                                                    {r.is_correct === false && <XCircle className="h-4 w-4 text-red-500 shrink-0" />}
+                                                    {r.is_correct === null && <Circle className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                                    <span className="text-muted-foreground truncate flex-1">{r.question_text}</span>
+                                                    <span className="font-mono text-xs bg-background px-2 py-1 rounded">{r.answer || "-"}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
+    // TEACHER SETUP VIEW
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Start a Live Session</h2>
-                    <p className="text-muted-foreground">Select concepts to quiz students on in real-time.</p>
+        <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight">Start a Live Session</h2>
+                            <p className="text-muted-foreground">Configure your real-time quiz session.</p>
+                        </div>
+                    </div>
+
+                    {/* Chapter Selection */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-base">1. Select Chapter</CardTitle>
+                            <CardDescription>Filter concepts by chapter context.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Select value={selectedChapterId} onValueChange={(val) => {
+                                setSelectedChapterId(val);
+                                setSelectedConceptIds([]); // Clear selection on chapter change
+                            }}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a chapter" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Chapters</SelectItem>
+                                    {chapters.map((chapter) => (
+                                        <SelectItem key={chapter.id} value={chapter.id.toString()}>
+                                            {chapter.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </CardContent>
+                    </Card>
+
+                    {/* Concept Selection */}
+                    <div>
+                        <div className="mb-4">
+                            <h3 className="font-semibold text-lg">2. Select Concepts</h3>
+                            <p className="text-sm text-muted-foreground">Choose specific topics from the selected chapter.</p>
+                        </div>
+
+                        {filteredConcepts.length === 0 ? (
+                            <Card className="border-2 border-dashed p-8 text-center">
+                                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                    <Zap className="h-8 w-8 opacity-20" />
+                                    <p>No concepts found for this selection.</p>
+                                </div>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                {filteredConcepts.map((concept) => {
+                                    const isSelected = selectedConceptIds.includes(concept.id!);
+                                    return (
+                                        <div
+                                            key={concept.id}
+                                            onClick={() => toggleConcept(concept.id)}
+                                            className={cn(
+                                                "cursor-pointer rounded-xl border p-4 transition-all hover:bg-muted/50",
+                                                isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "bg-card"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={cn("mt-1", isSelected ? "text-primary" : "text-muted-foreground")}>
+                                                    {isSelected ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <p className="font-medium leading-none">{concept.name}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
-                {concepts.length === 0 ? (
-                    <Card className="border-2 border-dashed p-8 text-center">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                            <Zap className="h-8 w-8 opacity-20" />
-                            <p>No concepts found for this class.</p>
-                            <p className="text-sm">Create assignments and analyze them to generate concepts.</p>
-                        </div>
-                    </Card>
-                ) : (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        {concepts.map((concept) => {
-                            const isSelected = selectedConceptIds.includes(concept.id!);
-                            return (
-                                <div
-                                    key={concept.id}
-                                    onClick={() => toggleConcept(concept.id)}
-                                    className={cn(
-                                        "cursor-pointer rounded-xl border p-4 transition-all hover:bg-muted/50",
-                                        isSelected ? "border-primary ring-1 ring-primary bg-primary/5" : "bg-card"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn("mt-1", isSelected ? "text-primary" : "text-muted-foreground")}>
-                                            {isSelected ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-medium leading-none">{concept.name}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                <div className="space-y-6">
+                    <LiveSessionConfig
+                        conceptCount={selectedConceptIds.length}
+                        onStart={handleStartSession}
+                        loading={starting}
+                    />
+                </div>
             </div>
 
-            <div className="space-y-6">
-                <Card className="sticky top-28 bg-muted/30 border-none shadow-none">
-                    <CardHeader>
-                        <CardTitle>Session Config</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">Selected Topics:</span>
-                            <span className="font-medium">{selectedConceptIds.length}</span>
-                        </div>
-
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-sm">
-                                <label htmlFor="time-limit" className="text-muted-foreground">Time Limit (mins):</label>
-                                <span className="font-medium text-xs text-muted-foreground">Est. {selectedConceptIds.length * 5}m recommended</span>
-                            </div>
-                            <Input
-                                id="time-limit"
-                                type="number"
-                                min={1}
-                                max={120}
-                                value={timeLimit}
-                                onChange={(e) => setTimeLimit(Number(e.target.value))}
-                                className="bg-background"
-                            />
-                        </div>
-
-                    </CardContent>
-                    <CardFooter>
-                        <Button
-                            className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20"
-                            size="lg"
-                            onClick={handleStartSession}
-                            disabled={selectedConceptIds.length === 0 || starting}
-                        >
-                            {starting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    Starting...
-                                </>
-                            ) : (
-                                <>
-                                    <Play className="mr-2 h-5 w-5 fill-current" />
-                                    Start Live
-                                </>
-                            )}
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </div>
-        </div>
+            <PastSessionsList
+                sessions={pastSessions}
+                onSelect={handleViewPastSession}
+            />
+        </>
     );
 }
