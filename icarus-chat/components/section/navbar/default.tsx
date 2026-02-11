@@ -42,7 +42,7 @@ interface NavbarProps {
 
 export default function Navbar({
   logo = <LaunchUI />,
-  name = "Stop LLMs",
+  name = "Socratica",
   homeUrl = "/",
   mobileLinks = [
     { text: "Home", href: "/" },
@@ -54,8 +54,8 @@ export default function Navbar({
 }: NavbarProps) {
   return (
     <header className={cn("sticky top-0 z-50 -mb-4 px-4 pb-4", className)}>
-      <div className="fade-bottom bg-background/15 absolute left-0 h-24 w-full backdrop-blur-lg"></div>
-      <div className="max-w-container relative mx-auto">
+      <div className="fade-bottom bg-background/15 absolute left-0 h-24 w-full backdrop-blur-lg pointer-events-none"></div>
+      <div className="max-w-container relative z-10 mx-auto">
         <NavbarComponent>
           <NavbarLeft>
             <a
@@ -72,7 +72,7 @@ export default function Navbar({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 md:hidden"
+                  className="mt-3 shrink-0 md:hidden"
                 >
                   <Menu className="size-5" />
                   <span className="sr-only">Toggle navigation menu</span>
