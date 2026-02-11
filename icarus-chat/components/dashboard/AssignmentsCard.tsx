@@ -1,0 +1,124 @@
+import { useEffect, useState } from "react";
+import { BarChart3, BookOpenText } from "lucide-react";
+
+import Link from "next/link";
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { AssignmentRead } from "@/app/types/school";
+import { AssignmentAnalytics } from "@/app/types/analytics";
+import { getAssignmentAnalytics } from "@/app/lib/api/analytics";
+
+interface AssignmentsCardProps {
+  assignments: AssignmentRead[];
+}
+
+export function AssignmentsCard({ assignments }: AssignmentsCardProps) {
+  const [analyticsByAssignmentId, setAnalyticsByAssignmentId] = useState<
+    Record<string, AssignmentAnalytics | null | undefined>
+  >({});
+
+  useEffect(() => {
+    let isMounted = true;
+    if (assignments.length === 0) return;
+
+    Promise.all(
+      assignments.map(async (assignment) => {
+        try {
+          const analytics = await getAssignmentAnalytics(Number(assignment.id));
+          return { id: assignment.id, analytics };
+        } catch {
+          return { id: assignment.id, analytics: null };
+        }
+      })
+    ).then((results) => {
+      if (!isMounted) return;
+      setAnalyticsByAssignmentId((prev) => {
+        const next = { ...prev };
+        results.forEach(({ id, analytics }) => {
+          next[id] = analytics;
+        });
+        return next;
+      });
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [assignments]);
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <CardTitle className="flex items-center gap-2">
+            <BookOpenText className="h-4 w-4" />
+            Assignments
+          </CardTitle>
+          <CardDescription>Includes upcoming analytics hooks.</CardDescription>
+        </div>
+        <Badge variant="outline">{assignments.length} total</Badge>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {assignments.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No assignments yet. Create one to start collecting insights.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {assignments.map((assignment) => {
+              const analytics = analyticsByAssignmentId[assignment.id];
+              return (
+                <div key={assignment.id} className="rounded-xl border bg-background/60 p-4 shadow-sm">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-semibold leading-tight">{assignment.title}</h3>
+                      {assignment.description && (
+                        <p className="text-sm text-muted-foreground">{assignment.description}</p>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <BarChart3 className="h-3.5 w-3.5" />
+                        Analytics ready soon
+                      </Badge>
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/dashboard/assignments/${assignment.id}`}>Manage</Link>
+                      </Button>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/analytics/assignments/${assignment.id}`}>View analytics</Link>
+                      </Button>
+                    </div>
+                  </div>
+                  <Separator className="my-3" />
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="rounded-lg bg-muted/40 p-3">
+                      <p className="text-xs uppercase text-muted-foreground">Least understood concept</p>
+                      <p className="text-base font-medium truncate" title={analytics?.least_understood_concept?.concept_name}>
+                        {analytics?.least_understood_concept?.concept_name ?? "Not available yet"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 p-3">
+                      <p className="text-xs uppercase text-muted-foreground">Least understood question</p>
+                      <p className="text-base font-medium line-clamp-2" title={analytics?.least_understood_question?.question_prompt}>
+                        {analytics?.least_understood_question?.question_prompt ?? "Not available yet"}
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-muted/40 p-3">
+                      <p className="text-xs uppercase text-muted-foreground">Most understood question</p>
+                      <p className="text-base font-medium line-clamp-2" title={analytics?.most_understood_question?.question_prompt}>
+                        {analytics?.most_understood_question?.question_prompt ?? "Not available yet"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
