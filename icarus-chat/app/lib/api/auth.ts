@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import {UserCreate, Token, User} from "@/app/types/auth";
+import { UserCreate, Token, User } from "@/app/types/auth";
 
 
 export async function postToken(username: string, password: string): Promise<Token> {
@@ -10,7 +10,12 @@ export async function postToken(username: string, password: string): Promise<Tok
 
   const response = await apiClient.post<Token>('/auth/token', body, {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
+  });
+  return response.data;
+}
+
+export async function postGoogleLogin(payload: { id_token?: string, code?: string, is_teacher?: boolean }): Promise<Token> {
+  const response = await apiClient.post<Token>('/auth/auth/google', payload);
   return response.data;
 }
 
@@ -24,11 +29,12 @@ export async function registerUser(data: UserCreate): Promise<User> {
   const response = await apiClient.post<User>('/auth/register', {
     username: data.username,
     email: data.email,
+    first_name: data.first_name,
+    last_name: data.last_name,
     password: data.password,
-    password_confirm: data.password_confirm,
     is_teacher: data.is_teacher,
   });
-  
+
   return response.data;
 }
 

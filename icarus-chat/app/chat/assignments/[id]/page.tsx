@@ -156,6 +156,7 @@ export default function AssignmentChatPage() {
         description: assignment.description,
         dueAt: assignment.due_at,
         files,
+        level: assignment.level,
       }}
       classNavigation={{
         classes,

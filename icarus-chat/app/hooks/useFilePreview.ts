@@ -20,7 +20,7 @@ export function useFilePreview() {
     setState({ file, loading: true, url: undefined, error: undefined });
 
     try {
-      const url = await getFilePreviewUrl(file.id);
+      const url = getFilePreviewUrl(file.id);
       setState({ file, url, loading: false, error: undefined });
     } catch (err) {
       setState({ file, loading: false, error: "Unable to load file preview." });

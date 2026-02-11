@@ -10,26 +10,41 @@ import { User } from "@/app/types/auth";
 interface UseDashboardDataResult {
   classes: ClassRead[];
   students: StudentRead[];
+  teachers: TeacherRead[];
   assignments: AssignmentRead[];
   usersById: Record<number, User>;
   loading: boolean;
+  initialized: boolean;
   error: string | null;
   refresh: () => Promise<void>;
   addAssignment: (assignment: AssignmentRead) => void;
 }
 
-export function useDashboardData(user: User | null, teacher: TeacherRead | null): UseDashboardDataResult {
+export function useDashboardData(
+  user: User | null,
+  teacher: TeacherRead | null,
+  student: StudentRead | null
+): UseDashboardDataResult {
   const [classes, setClasses] = useState<ClassRead[]>([]);
+  const [teachersList, setTeachersList] = useState<TeacherRead[]>([]);
   const [students, setStudents] = useState<StudentRead[]>([]);
   const [assignments, setAssignments] = useState<AssignmentRead[]>([]);
   const [usersById, setUsersById] = useState<Record<number, User>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [initialized, setInitialized] = useState(false);
+
   const teacherIdentifier = useMemo(() => teacher?.id ?? user?.id ?? null, [teacher, user]);
+  const studentIdentifier = useMemo(() => student?.id ?? null, [student]);
 
   const fetchData = useCallback(async () => {
     if (!user) return;
+
+    // Guard: If user is teacher/student but profile not loaded yet, wait.
+    if (user.is_teacher && !teacher) return;
+    if (!user.is_teacher && !student) return;
+
     setLoading(true);
     setError(null);
 
@@ -42,12 +57,23 @@ export function useDashboardData(user: User | null, teacher: TeacherRead | null)
         listUsers(),
       ]);
 
-      const resolvedTeacherId = teacherIdentifier ?? teacherList.find((entry) => entry.user_id === user.id)?.id;
-      const teacherClasses = resolvedTeacherId
-        ? classList.filter((classItem) => classItem.teacher_id === resolvedTeacherId)
-        : [];
+      let relevantClasses: ClassRead[] = [];
 
-      setClasses(teacherClasses);
+      if (teacher) {
+        const resolvedTeacherId = teacherIdentifier ?? teacherList.find((entry) => entry.user_id === user.id)?.id;
+        relevantClasses = resolvedTeacherId
+          ? classList.filter((classItem) => classItem.teacher_id === resolvedTeacherId)
+          : [];
+      } else if (student) {
+        // Find classes where student is enrolled
+        // This is tricky because we need the student object, but we have student list.
+        // Assuming the student object passed in has correct id. 
+        // We can check class.student_ids if available (it is in ClassRead)
+        relevantClasses = classList.filter(c => c.student_ids.includes(student.id));
+      }
+
+      setTeachersList(teacherList);
+      setClasses(relevantClasses);
       setStudents(studentList);
       setUsersById(
         userList.reduce<Record<number, User>>((accumulator, entry) => {
@@ -56,16 +82,19 @@ export function useDashboardData(user: User | null, teacher: TeacherRead | null)
         }, {}),
       );
 
-      const teacherAssignments = assignmentList.filter((assignment) =>
-        teacherClasses.some((classItem) => classItem.id === assignment.class_id),
+      // Filter assignments for relevant classes
+      const relevantAssignments = assignmentList.filter((assignment) =>
+        relevantClasses.some((classItem) => classItem.id === assignment.class_id),
       );
-      setAssignments(teacherAssignments);
+      setAssignments(relevantAssignments);
     } catch (fetchError) {
       setError("Unable to load your dashboard right now.");
+      console.error(fetchError);
     } finally {
       setLoading(false);
+      setInitialized(true);
     }
-  }, [teacherIdentifier, user]);
+  }, [teacher, student, teacherIdentifier, studentIdentifier, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -76,5 +105,5 @@ export function useDashboardData(user: User | null, teacher: TeacherRead | null)
     setAssignments((previous) => [assignment, ...previous]);
   }, []);
 
-  return { classes, students, assignments, usersById, loading, error, refresh: fetchData, addAssignment };
+  return { classes, students, teachers: teachersList, assignments, usersById, loading, initialized, error, refresh: fetchData, addAssignment };
 }

@@ -16,39 +16,37 @@ import { IMaskMixin } from 'react-imask'
 
 export function LogInPopUp() {
 
-    const [open, setOpen] = useState(false);
-    const [username, setUsername] = useState<string>("");
-    const [password, setPassword] = useState<string>("");
-    const [loggedIn, setLoggedIn] = useState<boolean>(false);
+  const [open, setOpen] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loggedIn, setLoggedIn] = useState<boolean>(false);
 
-    const handleLogIn = async () => {
-        const response = await authStore.login(username, password);
-        console.log("logged in as", username);
-        setOpen(false);
-        setLoggedIn(true);
-        return response.username
-    }
+  const handleLogIn = async () => {
+    const response = await authStore.login(username, password);
+    setOpen(false);
+    setLoggedIn(true);
+    return response.username
+  }
 
-    const handleLogOut = async () => {
-        const response = await authStore.logout();
-        console.log("logged out");
-        setLoggedIn(false);
-        return;
-    }
+  const handleLogOut = async () => {
+    const response = await authStore.logout();
+    setLoggedIn(false);
+    return;
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <form>
         {!loggedIn ? (
-            // Show when NOT logged in
-            <DialogTrigger asChild>
-                <Button variant="outline">Log In</Button>
-            </DialogTrigger>
-            ) : (
-            // Show when logged in
-            <Button variant="outline" type="submit" onClick={handleLogOut}>
-                Log Out
-            </Button>
+          // Show when NOT logged in
+          <DialogTrigger asChild>
+            <Button variant="default">Log In</Button>
+          </DialogTrigger>
+        ) : (
+          // Show when logged in
+          <Button variant="outline" type="submit" onClick={handleLogOut}>
+            Log Out
+          </Button>
         )}
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -57,32 +55,32 @@ export function LogInPopUp() {
           <div className="grid gap-4">
             <div className="grid gap-3">
               <Label htmlFor="username-1">Username</Label>
-              <Input 
-                id="username-1" 
-                name="username" 
+              <Input
+                id="username-1"
+                name="username"
                 placeholder="username..."
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
             </div>
             <div className="grid gap-3">
-              <Label 
-              htmlFor="password-1">Password</Label>
-              <Input 
-                id="password-1" 
-                name="password" 
+              <Label
+                htmlFor="password-1">Password</Label>
+              <Input
+                id="password-1"
+                name="password"
                 type="password"
                 placeholder="password..."
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                />
+              />
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit" onClick={handleLogIn}>Log In</Button>
+            <Button type="submit" onClick={handleLogIn} variant="default">Log In</Button>
           </DialogFooter>
         </DialogContent>
       </form>

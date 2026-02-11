@@ -44,7 +44,11 @@ export default function ClassPage() {
           <ErrorCard message={error} />
         ) : classData ? (
           <>
-            <ClassHeaderCard classData={classData} teacherName={teacherName} />
+            <ClassHeaderCard
+              classData={classData}
+              teacherName={teacherName}
+              analyticsHref={`/analytics/classes/${classData.id}`}
+            />
             <AssignmentsCard assignments={assignments} />
           </>
         ) : null}

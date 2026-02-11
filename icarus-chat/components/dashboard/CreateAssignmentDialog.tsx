@@ -9,12 +9,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
 interface AssignmentFormState {
   title: string;
   description: string;
   dueDate: string;
+  level: number;
 }
 
 interface CreateAssignmentDialogProps {
@@ -76,16 +84,35 @@ export function CreateAssignmentDialog({
               placeholder="What should students focus on?"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="assignment-due">
-              Due date (optional)
-            </label>
-            <Input
-              id="assignment-due"
-              type="date"
-              value={assignmentForm.dueDate}
-              onChange={(event) => onChange({ dueDate: event.target.value })}
-            />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Level</label>
+              <Select
+                value={String(assignmentForm.level)}
+                onValueChange={(val) => onChange({ level: parseInt(val, 10) })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Level 1 (Hints)</SelectItem>
+                  <SelectItem value="2">Level 2 (Hands-on)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium" htmlFor="assignment-due">
+                Due date (optional)
+              </label>
+              <Input
+                id="assignment-due"
+                type="date"
+                value={assignmentForm.dueDate}
+                onChange={(event) => onChange({ dueDate: event.target.value })}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="assignment-file">
