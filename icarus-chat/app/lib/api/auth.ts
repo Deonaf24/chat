@@ -14,7 +14,7 @@ export async function postToken(username: string, password: string): Promise<Tok
   return response.data;
 }
 
-export async function postGoogleLogin(payload: { id_token?: string, code?: string, is_teacher?: boolean }): Promise<Token> {
+export async function postGoogleLogin(payload: { id_token?: string, code?: string, is_teacher?: boolean, is_signup?: boolean }): Promise<Token> {
   const response = await apiClient.post<Token>('/auth/auth/google', payload);
   return response.data;
 }

@@ -15,7 +15,7 @@ import { LoadingSkeleton } from "@/components/class-page/LoadingSkeleton";
 import { ClassNavigationSidebar } from "@/components/section/sidebar/class-navigation";
 import Navbar from "@/components/section/navbar/default";
 
-export default function ClassPage() {
+export default function ClientClassPage() {
     const router = useRouter();
     const { user } = useAuthUser();
     const classId = useClassId();

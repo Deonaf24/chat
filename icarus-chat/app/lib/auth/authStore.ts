@@ -38,7 +38,7 @@ export const authStore = {
         setUser(user);
         return user;
     },
-    async googleLogin(payload: { id_token?: string, code?: string, is_teacher?: boolean }): Promise<User> {
+    async googleLogin(payload: { id_token?: string, code?: string, is_teacher?: boolean, is_signup?: boolean }): Promise<User> {
         const response = await postGoogleLogin(payload);
         setToken(response.access_token);
         const user = await getMe();

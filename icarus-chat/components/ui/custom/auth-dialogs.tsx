@@ -96,7 +96,7 @@ export function LoginDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPro
   const googleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {
       try {
-        const user = await authStore.googleLogin({ code: codeResponse.code, is_teacher: false });
+        const user = await authStore.googleLogin({ code: codeResponse.code, is_teacher: false, is_signup: false });
         onAuthSuccess?.(user);
         onOpenChange(false);
         reset();
@@ -263,7 +263,7 @@ export function SignUpDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogPr
     if (!googleToken) return;
     setLoading(true);
     try {
-      const user = await authStore.googleLogin({ code: googleToken, is_teacher: role === 'teacher' });
+      const user = await authStore.googleLogin({ code: googleToken, is_teacher: role === 'teacher', is_signup: true });
       onAuthSuccess?.(user);
       onOpenChange(false);
       reset();
